@@ -45,6 +45,9 @@ captures/
 pass-keystore.txt
 pass-*.txt
 secrets.properties
+google-services.json
+app/google-services.json
+serviceAccountKey.json
 
 # OS specific files
 .DS_Store
