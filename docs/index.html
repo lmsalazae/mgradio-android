@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mgRadio - Emisoras de Radio en Vivo para Android</title>
+    <meta name="description" content="mgRadio es la aplicación nativa de Android para sintonizar emisoras de radio en vivo por país y ciudad sin cortes con calidad de audio digital.">
+    <style>
+        :root {
+            --bg-color: #0B1120;
+            --card-bg: #1E293B;
+            --card-hover: #273549;
+            --text-color: #F8FAFC;
+            --text-muted: #94A3B8;
+            --primary: #06B6D4;
+            --primary-hover: #0891B2;
+            --accent: #38BDF8;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .nav-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .logo-img {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+        }
+
+        .logo-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: #0F172A;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+        }
+
+        main {
+            flex: 1;
+        }
+
+        .hero {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 60px 24px 40px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--primary);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            font-weight: 800;
+            background: linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 680px;
+            margin: 0 auto 36px;
+        }
+
+        .banner-container {
+            max-width: 900px;
+            margin: 0 auto 60px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .banner-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .features {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 24px 80px;
+        }
+
+        .features-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            font-weight: 700;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            background: var(--card-hover);
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+
+        .card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+            color: #FFFFFF;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        footer {
+            background: #070B14;
+            border-top: 1px solid var(--border);
+            padding: 36px 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.1rem;
+            }
+            .hero p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="nav-container">
+            <a href="index.html" class="logo-group">
+                <img src="graphics/app_icon_512x512.png" alt="mgRadio Logo" class="logo-img">
+                <div class="logo-text">mg<span>Radio</span></div>
+            </a>
+            <nav class="nav-links">
+                <a href="#features" class="nav-link">Características</a>
+                <a href="privacy-policy.html" class="nav-link">Privacidad</a>
+                <a href="https://github.com/lmsalazae/mgradio-android" target="_blank" class="nav-link">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="badge">Disponible para Android</div>
+            <h1>Emisoras de Radio en Vivo<br>Sin Cortes y en Alta Definición</h1>
+            <p>Sintoniza tus estaciones favoritas de México, Colombia y más países. Reproducción continua en segundo plano, inicio instantáneo y diseño moderno en Jetpack Compose.</p>
+            
+            <div class="banner-container">
+                <img src="graphics/feature_graphic_1024x500.png" alt="mgRadio Feature Graphic">
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <h2 class="features-title">Diseñado para la mejor experiencia radial</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon">🌍</div>
+                    <h3>Catálogo por País y Ciudad</h3>
+                    <p>Filtra estaciones organizadas por región o explora radios internacionales de forma rápida e intuitiva.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🎵</div>
+                    <h3>Segundo Plano & Media3</h3>
+                    <p>Sigue escuchando tu música y noticias con la pantalla apagada o usando otras aplicaciones, con controles integrados en notificaciones.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Arquitectura Offline-First</h3>
+                    <p>Arranque instantáneo gracias a la base de datos local en Room y sincronización automática con Firebase Firestore.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Búsqueda Rápida</h3>
+                    <p>Encuentra cualquier estación en milisegundos por su nombre, frecuencia FM/AM o género musical.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⭐</div>
+                    <h3>Lista de Favoritos</h3>
+                    <p>Guarda tus emisoras preferidas con un toque para acceder a ellas inmediatamente desde su pestaña dedicada.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🌙</div>
+                    <h3>Modo Oscuro AMOLED</h3>
+                    <p>Interfaz moderna con Material Design 3 optimizada para el ahorro de batería y máximo confort visual.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-links">
+            <a href="privacy-policy.html">Política de Privacidad</a>
+            <a href="https://github.com/lmsalazae/mgradio-android">Código en GitHub</a>
+            <a href="mailto:soporte@mgradio.com">Contacto de Soporte</a>
+        </div>
+        <p>&copy; 2026 mgRadio. Todos los derechos reservados.</p>
+    </footer>
+
+</body>
+</html>
