@@ -27,7 +27,7 @@ object AppModule {
             context,
             RadioDatabase::class.java,
             "mgradio.db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
