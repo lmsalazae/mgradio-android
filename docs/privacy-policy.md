@@ -74,4 +74,4 @@ Podemos actualizar nuestra Política de Privacidad periódicamente. Cualquier mo
 
 Si tienes alguna pregunta o sugerencia sobre nuestra Política de Privacidad, puedes ponerte en contacto con nosotros a través del correo electrónico:
 
-**Correo de soporte:** `soporte@mgradio.com` *(o el correo que tengas asociado a tu cuenta de desarrollador de Google Play)*
+**Correo de soporte:** `migcontacto@gmail.com`

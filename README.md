@@ -252,8 +252,8 @@ Consulta la documentación técnica en la carpeta [`docs/`](docs/) para mayores 
 
 Este proyecto se distribuye bajo los términos y condiciones del desarrollador. Para consultas, soporte o adición de nuevas emisoras al catálogo:
 
-- ✉️ **Contacto de soporte:** soporte@mgradio.com
-- 🌐 **Sitio Web:** [mgradio.com](https://mgradio.com)
+- ✉️ **Contacto de soporte:** migcontacto@gmail.com
+- 🌐 **Sitio Web:** [https://lmsalazae.github.io/mgradio-android](https://lmsalazae.github.io/mgradio-android)
 
 ---
 

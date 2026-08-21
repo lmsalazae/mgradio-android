@@ -48,7 +48,7 @@ Compatible con transmisiones de alta calidad en formatos HLS, AAC y MP3 (Icecast
 ---
 
 ¿Tienes alguna duda, sugerencia o quieres reportar una emisora?
-Escríbenos a: soporte@mgradio.com
+Escríbenos a: migcontacto@gmail.com
 
 Descarga mgRadio hoy y lleva tus estaciones de radio favoritas a donde quiera que vayas.
 ```
