@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "136174323434",
+    "project_id": "mgradio-app",
+    "storage_bucket": "mgradio-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:136174323434:android:d4fd718e20fc87cc4a7993",
+        "android_client_info": {
+          "package_name": "com.mgradio.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBc3VBQBE705TTFNBtQyWVvmt2zALb4EbE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

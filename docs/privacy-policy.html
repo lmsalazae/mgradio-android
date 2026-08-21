@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidad - mgRadio</title>
+    <style>
+        :root {
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --text-color: #F8FAFC;
+            --text-muted: #94A3B8;
+            --primary: #06B6D4;
+            --border: #334155;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 24px 16px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 36px 28px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        .date {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+            display: block;
+        }
+        h2 {
+            color: #E2E8F0;
+            font-size: 1.3rem;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+        }
+        h3 {
+            color: var(--primary);
+            font-size: 1.05rem;
+            margin-top: 16px;
+            margin-bottom: 8px;
+        }
+        p, li {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+        ul, ol {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        strong {
+            color: var(--text-color);
+        }
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .contact-box {
+            background: #0F172A;
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Política de Privacidad de mgRadio</h1>
+        <span class="date">Última actualización: 20 de agosto de 2026</span>
+
+        <p>En <strong>mgRadio</strong>, respetamos y protegemos la privacidad de nuestros usuarios. Esta Política de Privacidad describe cómo se recopila, utiliza y protege la información cuando utilizas nuestra aplicación móvil para Android.</p>
+
+        <h2>1. Información que recopilamos</h2>
+        <p>mgRadio está diseñada para ofrecer una experiencia de escucha de radio en directo sencilla, rápida y sin recopilar datos personales innecesarios.</p>
+
+        <h3>a. Información recopilada automáticamente</h3>
+        <p>Para garantizar la estabilidad técnica y mejorar la calidad del servicio, la aplicación utiliza <strong>Google Firebase Analytics</strong>:</p>
+        <ul>
+            <li><strong>Datos técnicos del dispositivo:</strong> Modelo de dispositivo, versión del sistema operativo Android, idioma del sistema y resolución.</li>
+            <li><strong>Métricas anónimas de uso:</strong> Eventos de interacción dentro de la app (apertura, estaciones sintonizadas y navegación entre pestañas).</li>
+            <li><strong>Diagnóstico y rendimiento:</strong> Informes anónimos sobre errores o fallos en el streaming.</li>
+        </ul>
+        <p><em>Ninguno de estos datos se asocia con tu identidad personal, nombre, dirección de correo ni número de teléfono.</em></p>
+
+        <h3>b. Datos almacenados localmente</h3>
+        <p>Las emisoras marcadas como favoritas y la copia local del catálogo se guardan exclusivamente en el almacenamiento interno de tu dispositivo (Base de datos SQLite/Room). Esta información no se transfiere a servidores externos.</p>
+
+        <h2>2. Permisos del Dispositivo y Finalidad</h2>
+        <ul>
+            <li><strong>Acceso a Internet (INTERNET):</strong> Permite descargar el catálogo de emisoras y reproducir el flujo de audio en directo.</li>
+            <li><strong>Estado de la Red (ACCESS_NETWORK_STATE):</strong> Permite detectar si el dispositivo cuenta con conexión a internet activa.</li>
+            <li><strong>Servicio en Primer Plano (FOREGROUND_SERVICE y FOREGROUND_SERVICE_MEDIA_PLAYBACK):</strong> Permite que la transmisión de radio continúe reproduciéndose en segundo plano o con la pantalla apagada.</li>
+            <li><strong>Notificaciones (POST_NOTIFICATIONS):</strong> En Android 13+, permite mostrar los controles de reproducción (Play/Pausa, nombre de emisora) en la barra de notificaciones y pantalla de bloqueo.</li>
+        </ul>
+
+        <h2>3. Servicios de Terceros</h2>
+        <p>Nuestra aplicación utiliza servicios de terceros:</p>
+        <ul>
+            <li><strong>Google Firebase (Firestore y Analytics):</strong> Utilizado para sincronizar el catálogo de emisoras y obtener métricas anónimas. Consulta su política en <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">https://policies.google.com/privacy</a>.</li>
+            <li><strong>Servidores de Radiodifusión:</strong> Al sintonizar una emisora, tu dispositivo se conecta directamente a la URL de transmisión pública provista por la radiodifusora.</li>
+        </ul>
+
+        <h2>4. Privacidad de Menores</h2>
+        <p>mgRadio no recopila conscientemente información de identificación personal de niños menores de 13 años.</p>
+
+        <h2>5. Seguridad de los Datos</h2>
+        <p>Toda la comunicación con los servicios de catálogo de mgRadio se realiza a través de conexiones seguras y cifradas (HTTPS/SSL).</p>
+
+        <h2>6. Contacto</h2>
+        <p>Si tienes alguna pregunta o inquietud sobre nuestra Política de Privacidad, puedes ponerte en contacto con nosotros:</p>
+        <div class="contact-box">
+            <strong>Correo electrónico de soporte:</strong> soporte@mgradio.com
+        </div>
+    </div>
+</body>
+</html>
