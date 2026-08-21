@@ -73,7 +73,7 @@ Descarga mgRadio hoy y lleva tus estaciones de radio favoritas a donde quiera qu
 | :--- | :--- | :--- | :--- |
 | **Icono de la app** | 512 × 512 px | PNG (32-bit con canal alfa) | Máx. 1 MB, sin bordes redondeados (Google Play aplica la máscara automáticamente). |
 | **Gráfico de funciones (Banner)** | 1024 × 500 px | JPG o PNG (24-bit sin alfa) | Máx. 15 MB, visualmente atractivo, destaca el nombre y esencia de la app. |
-| **Capturas de pantalla (Teléfono)** | 1080 × 1920 px (o 1080 × 2400 px) | PNG o JPG | Mínimo 2 capturas (recomendado 4 a 6 capturas mostrando catálogo, reproductor, búsqueda y modo oscuro). |
+| **Capturas de pantalla (Teléfono)** | Vertical (Smartphone) | JPG / PNG | 4 capturas listas en `docs/graphics/`:<br>1. `screenshot_1_home_catalog.jpeg`<br>2. `screenshot_2_city_selector.jpeg`<br>3. `screenshot_3_full_player.jpeg`<br>4. `screenshot_4_favorites_tab.jpeg` |
 
 ---
 
