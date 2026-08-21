@@ -231,7 +231,7 @@ fun MainScreen(
                     containerColor = DarkSurface,
                     contentColor = PrimaryCyan,
                     indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
+                        TabRowDefaults.SecondaryIndicator(
                             Modifier.tabIndicatorOffset(tabPositions[uiState.selectedTab]),
                             color = PrimaryCyan,
                             height = 3.dp
