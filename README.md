@@ -16,7 +16,8 @@
   <a href="#-tecnologías-y-stack"><img src="https://img.shields.io/badge/Room%20DB-Offline--First-FFA000.svg?style=flat-square&logo=sqlite&logoColor=white" alt="Room DB"></a>
   <a href="#-tecnologías-y-stack"><img src="https://img.shields.io/badge/Hilt-Dependency%20Injection-00599C.svg?style=flat-square" alt="Hilt"></a>
   <a href="#-requisitos-y-entorno"><img src="https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-informational.svg?style=flat-square" alt="Min SDK"></a>
-  <a href="#-requisitos-y-entorno"><img src="https://img.shields.io/badge/Target%20SDK-35%20(Android%2015)-success.svg?style=flat-square" alt="Target SDK"></a>
+  <a href="#-requisitos-y-entorno"><img src="https://img.shields.io/badge/Target%20SDK-36%20(Android%2016)-success.svg?style=flat-square" alt="Target SDK"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GNU%20GPLv3-blue.svg?style=flat-square" alt="License: GPL v3"></a>
 </p>
 
 <p align="center">
@@ -149,7 +150,7 @@ app/src/main/java/com/mgradio/app/
 | **Backend & Cloud CMS** | [Firebase Firestore](https://firebase.google.com/docs/firestore) | Firebase Android BoM |
 | **Carga de Imágenes** | [Coil Compose](https://coil-kt.github.io/coil/) | Carga asíncrona de logos con caché |
 | **Concurrencia** | [Kotlin Coroutines & Flow](https://kotlinlang.org/docs/coroutines-overview.html) | StateFlow / SharedFlow |
-| **Plataforma SDK** | Android SDK | Min: **26** (8.0 Oreo) / Target: **35** (15) |
+| **Plataforma SDK** | Android SDK | Min: **26** (8.0 Oreo) / Target: **36** (16) |
 
 ---
 
@@ -250,7 +251,20 @@ Consulta la documentación técnica en la carpeta [`docs/`](docs/) para mayores 
 
 ## 📄 Licencia
 
-Este proyecto se distribuye bajo los términos y condiciones del desarrollador. Para consultas, soporte o adición de nuevas emisoras al catálogo:
+Este proyecto está licenciado bajo la **GNU General Public License v3.0 (GPLv3)**.
+
+Esto significa que:
+- Eres libre de usar, estudiar, modificar y distribuir este software.
+- Cualquier trabajo derivado o aplicación modificada que se distribuya debe ser publicado bajo los mismos términos de código abierto (GPLv3).
+- No se proporciona ninguna garantía sobre el software.
+
+Para consultar los términos y condiciones completos, revisa el archivo [LICENSE](LICENSE).
+
+---
+
+### 📬 Contacto y Soporte
+
+Para consultas, reportes o adición de nuevas emisoras al catálogo:
 
 - ✉️ **Contacto de soporte:** migcontacto@gmail.com
 - 🌐 **Sitio Web:** [https://lmsalazae.github.io/mgradio-android](https://lmsalazae.github.io/mgradio-android)
