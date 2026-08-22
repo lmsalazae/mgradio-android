@@ -48,7 +48,7 @@ class RadioMediaService : MediaSessionService() {
         createNotificationChannel()
 
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent("mgRadio/1.0 (Linux; Android)")
+            .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
             .setAllowCrossProtocolRedirects(true)
             .setKeepPostFor302Redirects(true)
             .setConnectTimeoutMs(20000)
