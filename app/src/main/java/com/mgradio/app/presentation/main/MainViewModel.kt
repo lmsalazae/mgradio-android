@@ -59,6 +59,9 @@ class MainViewModel @Inject constructor(
 
             _uiState.update { currentState ->
                 val cities = StationUtils.extractCities(stations, currentState.selectedCountry)
+                val updatedPlayingStation = currentState.currentPlayingStation?.let { current ->
+                    stations.find { it.id == current.id } ?: current
+                }
                 currentState.copy(
                     allStations = stations,
                     activeStations = active,
@@ -66,7 +69,8 @@ class MainViewModel @Inject constructor(
                     offlineStations = offline,
                     categories = categories,
                     availableCountries = countries,
-                    availableCities = cities
+                    availableCities = cities,
+                    currentPlayingStation = updatedPlayingStation
                 )
             }
         }.launchIn(viewModelScope)
@@ -96,8 +100,11 @@ class MainViewModel @Inject constructor(
                 radioPlayerManager.clearError()
             } else if (playerState.playbackState != PlaybackState.ERROR) {
                 _uiState.update { currentState ->
+                    val resolvedStation = playerState.currentStation?.let { playerStation ->
+                        currentState.allStations.find { it.id == playerStation.id } ?: playerStation
+                    }
                     currentState.copy(
-                        currentPlayingStation = playerState.currentStation,
+                        currentPlayingStation = resolvedStation,
                         playbackState = playerState.playbackState
                     )
                 }
@@ -145,7 +152,8 @@ class MainViewModel @Inject constructor(
     }
 
     fun onStationClicked(station: Station) {
-        playStationUseCase(station)
+        val latestStation = _uiState.value.allStations.find { it.id == station.id } ?: station
+        playStationUseCase(latestStation)
     }
 
     fun onTogglePlayPause() {
@@ -154,7 +162,8 @@ class MainViewModel @Inject constructor(
 
     fun onToggleFavorite(station: Station) {
         viewModelScope.launch {
-            toggleFavoriteUseCase(station.id, !station.isFavorite)
+            val latestStation = _uiState.value.allStations.find { it.id == station.id } ?: station
+            toggleFavoriteUseCase(station.id, !latestStation.isFavorite)
         }
     }
 
