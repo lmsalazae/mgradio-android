@@ -27,7 +27,7 @@ object AppModule {
             context,
             RadioDatabase::class.java,
             "mgradio.db"
-        ).fallbackToDestructiveMigration().build()
+        ).fallbackToDestructiveMigration(dropAllTables = true).build()
     }
 
     @Provides

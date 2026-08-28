@@ -12,6 +12,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -57,7 +58,7 @@ fun CountrySelectorDropdown(
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
             ),
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
         )
 
@@ -110,7 +111,7 @@ fun CitySelectorDropdown(
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
             ),
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
         )
 

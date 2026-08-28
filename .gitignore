@@ -35,6 +35,7 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+.artifacts/
 
 # Kotlin
 .kotlin/
