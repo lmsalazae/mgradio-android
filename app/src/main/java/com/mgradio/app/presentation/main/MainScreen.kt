@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -202,28 +203,37 @@ fun MainScreen(
                 StationSearchBar(
                     searchQuery = uiState.searchQuery,
                     onSearchQueryChange = { viewModel.onSearchQueryChanged(it) },
-                    onClearQuery = { viewModel.onClearSearchQuery() }
+                    onClearQuery = { viewModel.onClearSearchQuery() },
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp)
                 )
 
-                // Selector de País
-                CountrySelectorDropdown(
-                    selectedCountry = uiState.selectedCountry,
-                    availableCountries = uiState.availableCountries,
-                    onCountrySelected = { country ->
-                        viewModel.onCountrySelected(country)
-                    }
-                )
+                // Selectores de País y Ciudad en una sola fila compacta
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CountrySelectorDropdown(
+                        selectedCountry = uiState.selectedCountry,
+                        availableCountries = uiState.availableCountries,
+                        onCountrySelected = { country ->
+                            viewModel.onCountrySelected(country)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
 
-                // Selector de Ciudad
-                CitySelectorDropdown(
-                    selectedCity = uiState.selectedCity,
-                    availableCities = uiState.availableCities,
-                    onCitySelected = { city ->
-                        viewModel.onCitySelected(city)
-                    }
-                )
+                    CitySelectorDropdown(
+                        selectedCity = uiState.selectedCity,
+                        availableCities = uiState.availableCities,
+                        onCitySelected = { city ->
+                            viewModel.onCitySelected(city)
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // Tabs con Contadores Dinámicos: 0: Todas, 1: Favoritas, 2: Offline
                 TabRow(
@@ -234,7 +244,7 @@ fun MainScreen(
                         TabRowDefaults.SecondaryIndicator(
                             Modifier.tabIndicatorOffset(tabPositions[uiState.selectedTab]),
                             color = PrimaryCyan,
-                            height = 3.dp
+                            height = 2.5.dp
                         )
                     }
                 ) {
@@ -244,7 +254,8 @@ fun MainScreen(
                         text = {
                             Text(
                                 "Todas (${filteredActiveStations.size})",
-                                fontWeight = if (uiState.selectedTab == 0) FontWeight.Bold else FontWeight.Medium
+                                fontWeight = if (uiState.selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 13.sp
                             )
                         }
                     )
@@ -254,7 +265,8 @@ fun MainScreen(
                         text = {
                             Text(
                                 "Favoritas (${filteredFavoriteStations.size})",
-                                fontWeight = if (uiState.selectedTab == 1) FontWeight.Bold else FontWeight.Medium
+                                fontWeight = if (uiState.selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 13.sp
                             )
                         }
                     )
@@ -264,7 +276,8 @@ fun MainScreen(
                         text = {
                             Text(
                                 "Offline (${filteredOfflineStations.size})",
-                                fontWeight = if (uiState.selectedTab == 2) FontWeight.Bold else FontWeight.Medium
+                                fontWeight = if (uiState.selectedTab == 2) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 13.sp
                             )
                         }
                     )
@@ -275,7 +288,7 @@ fun MainScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                            .padding(horizontal = 14.dp, vertical = 4.dp)
                             .horizontalScroll(rememberScrollState())
                     ) {
                         uiState.categories.forEach { category ->
@@ -283,8 +296,13 @@ fun MainScreen(
                             FilterChip(
                                 selected = isSelected,
                                 onClick = { viewModel.onCategorySelected(category) },
-                                label = { Text(category) },
-                                modifier = Modifier.padding(end = 8.dp),
+                                label = {
+                                    Text(
+                                        category,
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                },
+                                modifier = Modifier.padding(end = 6.dp),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = PrimaryCyan.copy(alpha = 0.2f),
                                     selectedLabelColor = PrimaryCyan

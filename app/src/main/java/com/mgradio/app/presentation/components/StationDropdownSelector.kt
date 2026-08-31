@@ -1,7 +1,7 @@
 package com.mgradio.app.presentation.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
@@ -22,7 +22,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mgradio.app.presentation.theme.DarkSurfaceCard
 import com.mgradio.app.presentation.theme.PrimaryCyan
 
@@ -40,17 +42,33 @@ fun CountrySelectorDropdown(
         expanded = expanded,
         onExpandedChange = { expanded = !expanded },
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp)
     ) {
         OutlinedTextField(
             value = selectedCountry,
             onValueChange = {},
             readOnly = true,
-            shape = RoundedCornerShape(14.dp),
-            label = { Text("Filtrar por País") },
-            leadingIcon = { Icon(Icons.Default.Public, contentDescription = null, tint = PrimaryCyan) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+            shape = RoundedCornerShape(12.dp),
+            label = {
+                Text(
+                    text = "País",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Public,
+                    contentDescription = null,
+                    tint = PrimaryCyan,
+                    modifier = Modifier.size(18.dp)
+                )
+            },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = DarkSurfaceCard,
                 unfocusedContainerColor = DarkSurfaceCard,
@@ -68,7 +86,7 @@ fun CountrySelectorDropdown(
         ) {
             availableCountries.forEach { country ->
                 DropdownMenuItem(
-                    text = { Text(country) },
+                    text = { Text(country, fontSize = 14.sp) },
                     onClick = {
                         onCountrySelected(country)
                         expanded = false
@@ -93,17 +111,33 @@ fun CitySelectorDropdown(
         expanded = expanded,
         onExpandedChange = { expanded = !expanded },
         modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp)
     ) {
         OutlinedTextField(
             value = selectedCity,
             onValueChange = {},
             readOnly = true,
-            shape = RoundedCornerShape(14.dp),
-            label = { Text("Filtrar por Ciudad") },
-            leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = PrimaryCyan) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+            shape = RoundedCornerShape(12.dp),
+            label = {
+                Text(
+                    text = "Ciudad",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = PrimaryCyan,
+                    modifier = Modifier.size(18.dp)
+                )
+            },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = DarkSurfaceCard,
                 unfocusedContainerColor = DarkSurfaceCard,
@@ -121,7 +155,7 @@ fun CitySelectorDropdown(
         ) {
             availableCities.forEach { city ->
                 DropdownMenuItem(
-                    text = { Text(city) },
+                    text = { Text(city, fontSize = 14.sp) },
                     onClick = {
                         onCitySelected(city)
                         expanded = false
@@ -131,3 +165,4 @@ fun CitySelectorDropdown(
         }
     }
 }
+

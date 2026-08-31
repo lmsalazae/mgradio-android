@@ -1,7 +1,7 @@
 package com.mgradio.app.presentation.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.mgradio.app.presentation.theme.DarkSurfaceCard
 import com.mgradio.app.presentation.theme.PrimaryCyan
 
@@ -34,14 +35,13 @@ fun StationSearchBar(
     OutlinedTextField(
         value = searchQuery,
         onValueChange = onSearchQueryChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(14.dp),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
         placeholder = {
             Text(
                 text = "Buscar emisora por nombre...",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         },
@@ -49,16 +49,21 @@ fun StationSearchBar(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Buscar",
-                tint = PrimaryCyan
+                tint = PrimaryCyan,
+                modifier = Modifier.size(20.dp)
             )
         },
         trailingIcon = {
             if (searchQuery.isNotBlank()) {
-                IconButton(onClick = onClearQuery) {
+                IconButton(
+                    onClick = onClearQuery,
+                    modifier = Modifier.size(28.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Limpiar búsqueda",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -83,3 +88,4 @@ fun StationSearchBar(
         )
     )
 }
+
