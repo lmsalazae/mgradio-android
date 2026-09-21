@@ -23,11 +23,14 @@ android {
 
     signingConfigs {
         create("release") {
-            val pass = rootProject.file("pass-keystore.txt").takeIf { it.exists() }?.readText()?.trim() ?: "De\$\$arr0110"
-            storeFile = rootProject.file("mgradio-eystore.jks")
-            storePassword = pass
-            keyAlias = "mgradio keystore"
-            keyPassword = pass
+            val passFile = rootProject.file("pass-keystore.txt")
+            if (passFile.exists()) {
+                val pass = passFile.readText().trim()
+                storeFile = rootProject.file("mgradio-eystore.jks")
+                storePassword = pass
+                keyAlias = "mgradio keystore"
+                keyPassword = pass
+            }
         }
     }
 
