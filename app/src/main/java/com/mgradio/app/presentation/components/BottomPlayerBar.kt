@@ -27,6 +27,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.border
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,17 +61,25 @@ fun BottomPlayerBar(
 ) {
     if (station == null) return
 
+    var isFocused by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier
             .navigationBarsPadding()
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp)
+            .onFocusChanged { isFocused = it.isFocused }
+            .border(
+                width = if (isFocused) 2.dp else 0.dp,
+                color = if (isFocused) PrimaryCyan else Color.Transparent,
+                shape = RoundedCornerShape(20.dp)
+            )
             .clickable { onBarClick() },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = DarkSurfaceCard
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isFocused) 14.dp else 10.dp)
     ) {
         Row(
             modifier = Modifier

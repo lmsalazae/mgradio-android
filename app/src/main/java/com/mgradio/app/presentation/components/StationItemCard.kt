@@ -38,6 +38,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.border
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
@@ -57,20 +63,35 @@ fun StationItemCard(
     onFavoriteClick: (Station) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var isFocused by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 6.dp)
+            .onFocusChanged { isFocused = it.isFocused }
+            .border(
+                width = if (isFocused) 2.dp else 0.dp,
+                color = if (isFocused) PrimaryCyan else Color.Transparent,
+                shape = RoundedCornerShape(18.dp)
+            )
             .clickable { onStationClick(station) },
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = when {
+                isFocused -> MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
                 isPlaying -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                 !station.activo -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                 else -> MaterialTheme.colorScheme.primaryContainer
             }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isPlaying) 4.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = when {
+                isFocused -> 8.dp
+                isPlaying -> 4.dp
+                else -> 1.dp
+            }
+        )
     ) {
         Row(
             modifier = Modifier
