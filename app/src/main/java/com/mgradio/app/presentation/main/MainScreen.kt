@@ -55,6 +55,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -185,7 +190,18 @@ fun MainScreen(
                     actions = {
                         IconButton(
                             onClick = { viewModel.refreshRemoteData() },
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .onPreviewKeyEvent { keyEvent ->
+                                    if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                                        if (keyEvent.type == KeyEventType.KeyUp) {
+                                            viewModel.refreshRemoteData()
+                                        }
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
@@ -251,6 +267,16 @@ fun MainScreen(
                     Tab(
                         selected = uiState.selectedTab == 0,
                         onClick = { viewModel.onTabSelected(0) },
+                        modifier = Modifier.onPreviewKeyEvent { keyEvent ->
+                            if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                                if (keyEvent.type == KeyEventType.KeyUp) {
+                                    viewModel.onTabSelected(0)
+                                }
+                                true
+                            } else {
+                                false
+                            }
+                        },
                         text = {
                             Text(
                                 "Todas (${filteredActiveStations.size})",
@@ -262,6 +288,16 @@ fun MainScreen(
                     Tab(
                         selected = uiState.selectedTab == 1,
                         onClick = { viewModel.onTabSelected(1) },
+                        modifier = Modifier.onPreviewKeyEvent { keyEvent ->
+                            if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                                if (keyEvent.type == KeyEventType.KeyUp) {
+                                    viewModel.onTabSelected(1)
+                                }
+                                true
+                            } else {
+                                false
+                            }
+                        },
                         text = {
                             Text(
                                 "Favoritas (${filteredFavoriteStations.size})",
@@ -273,6 +309,16 @@ fun MainScreen(
                     Tab(
                         selected = uiState.selectedTab == 2,
                         onClick = { viewModel.onTabSelected(2) },
+                        modifier = Modifier.onPreviewKeyEvent { keyEvent ->
+                            if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                                if (keyEvent.type == KeyEventType.KeyUp) {
+                                    viewModel.onTabSelected(2)
+                                }
+                                true
+                            } else {
+                                false
+                            }
+                        },
                         text = {
                             Text(
                                 "Offline (${filteredOfflineStations.size})",
@@ -296,13 +342,24 @@ fun MainScreen(
                             FilterChip(
                                 selected = isSelected,
                                 onClick = { viewModel.onCategorySelected(category) },
+                                modifier = Modifier
+                                    .padding(end = 6.dp)
+                                    .onPreviewKeyEvent { keyEvent ->
+                                        if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                                            if (keyEvent.type == KeyEventType.KeyUp) {
+                                                viewModel.onCategorySelected(category)
+                                            }
+                                            true
+                                        } else {
+                                            false
+                                        }
+                                    },
                                 label = {
                                     Text(
                                         category,
                                         style = MaterialTheme.typography.labelMedium
                                     )
                                 },
-                                modifier = Modifier.padding(end = 6.dp),
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = PrimaryCyan.copy(alpha = 0.2f),
                                     selectedLabelColor = PrimaryCyan

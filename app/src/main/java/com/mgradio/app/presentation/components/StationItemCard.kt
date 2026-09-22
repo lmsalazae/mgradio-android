@@ -44,6 +44,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
@@ -75,7 +80,17 @@ fun StationItemCard(
                 color = if (isFocused) PrimaryCyan else Color.Transparent,
                 shape = RoundedCornerShape(18.dp)
             )
-            .clickable { onStationClick(station) },
+            .clickable { onStationClick(station) }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                    if (keyEvent.type == KeyEventType.KeyUp) {
+                        onStationClick(station)
+                    }
+                    true
+                } else {
+                    false
+                }
+            },
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = when {
@@ -262,6 +277,16 @@ fun StationItemCard(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
+                    .onPreviewKeyEvent { keyEvent ->
+                        if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                            if (keyEvent.type == KeyEventType.KeyUp) {
+                                onFavoriteClick(station)
+                            }
+                            true
+                        } else {
+                            false
+                        }
+                    }
             ) {
                 Icon(
                     imageVector = if (station.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,

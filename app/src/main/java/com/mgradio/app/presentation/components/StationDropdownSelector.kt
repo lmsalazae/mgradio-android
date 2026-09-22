@@ -1,5 +1,7 @@
 package com.mgradio.app.presentation.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,6 +24,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,10 +47,11 @@ fun CountrySelectorDropdown(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
+        onExpandedChange = { expanded = it },
         modifier = modifier
     ) {
         OutlinedTextField(
@@ -78,6 +89,26 @@ fun CountrySelectorDropdown(
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
+                .onPreviewKeyEvent { keyEvent ->
+                    if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                        if (keyEvent.type == KeyEventType.KeyUp) {
+                            expanded = !expanded
+                        }
+                        true
+                    } else if (keyEvent.key == Key.DirectionRight) {
+                        if (keyEvent.type == KeyEventType.KeyDown) {
+                            focusManager.moveFocus(FocusDirection.Right)
+                        }
+                        true
+                    } else if (keyEvent.key == Key.DirectionLeft) {
+                        if (keyEvent.type == KeyEventType.KeyDown) {
+                            focusManager.moveFocus(FocusDirection.Left)
+                        }
+                        true
+                    } else {
+                        false
+                    }
+                }
         )
 
         ExposedDropdownMenu(
@@ -85,11 +116,30 @@ fun CountrySelectorDropdown(
             onDismissRequest = { expanded = false }
         ) {
             availableCountries.forEach { country ->
+                val isSelected = country == selectedCountry
                 DropdownMenuItem(
-                    text = { Text(country, fontSize = 14.sp) },
+                    text = {
+                        Text(
+                            text = country,
+                            fontSize = 14.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) PrimaryCyan else MaterialTheme.colorScheme.onSurface
+                        )
+                    },
                     onClick = {
                         onCountrySelected(country)
                         expanded = false
+                    },
+                    modifier = Modifier.onPreviewKeyEvent { keyEvent ->
+                        if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                            if (keyEvent.type == KeyEventType.KeyUp) {
+                                onCountrySelected(country)
+                                expanded = false
+                            }
+                            true
+                        } else {
+                            false
+                        }
                     }
                 )
             }
@@ -106,10 +156,11 @@ fun CitySelectorDropdown(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
+        onExpandedChange = { expanded = it },
         modifier = modifier
     ) {
         OutlinedTextField(
@@ -147,6 +198,26 @@ fun CitySelectorDropdown(
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
+                .onPreviewKeyEvent { keyEvent ->
+                    if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                        if (keyEvent.type == KeyEventType.KeyUp) {
+                            expanded = !expanded
+                        }
+                        true
+                    } else if (keyEvent.key == Key.DirectionRight) {
+                        if (keyEvent.type == KeyEventType.KeyDown) {
+                            focusManager.moveFocus(FocusDirection.Right)
+                        }
+                        true
+                    } else if (keyEvent.key == Key.DirectionLeft) {
+                        if (keyEvent.type == KeyEventType.KeyDown) {
+                            focusManager.moveFocus(FocusDirection.Left)
+                        }
+                        true
+                    } else {
+                        false
+                    }
+                }
         )
 
         ExposedDropdownMenu(
@@ -154,11 +225,30 @@ fun CitySelectorDropdown(
             onDismissRequest = { expanded = false }
         ) {
             availableCities.forEach { city ->
+                val isSelected = city == selectedCity
                 DropdownMenuItem(
-                    text = { Text(city, fontSize = 14.sp) },
+                    text = {
+                        Text(
+                            text = city,
+                            fontSize = 14.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected) PrimaryCyan else MaterialTheme.colorScheme.onSurface
+                        )
+                    },
                     onClick = {
                         onCitySelected(city)
                         expanded = false
+                    },
+                    modifier = Modifier.onPreviewKeyEvent { keyEvent ->
+                        if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                            if (keyEvent.type == KeyEventType.KeyUp) {
+                                onCitySelected(city)
+                                expanded = false
+                            }
+                            true
+                        } else {
+                            false
+                        }
                     }
                 )
             }
@@ -166,3 +256,32 @@ fun CitySelectorDropdown(
     }
 }
 
+@Composable
+fun StationDropdownSelectors(
+    selectedCountry: String,
+    availableCountries: List<String>,
+    onCountrySelected: (String) -> Unit,
+    selectedCity: String,
+    availableCities: List<String>,
+    onCitySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        CountrySelectorDropdown(
+            selectedCountry = selectedCountry,
+            availableCountries = availableCountries,
+            onCountrySelected = onCountrySelected,
+            modifier = Modifier.weight(1f)
+        )
+
+        CitySelectorDropdown(
+            selectedCity = selectedCity,
+            availableCities = availableCities,
+            onCitySelected = onCitySelected,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}

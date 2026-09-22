@@ -33,6 +33,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,7 +79,17 @@ fun BottomPlayerBar(
                 color = if (isFocused) PrimaryCyan else Color.Transparent,
                 shape = RoundedCornerShape(20.dp)
             )
-            .clickable { onBarClick() },
+            .clickable { onBarClick() }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                    if (keyEvent.type == KeyEventType.KeyUp) {
+                        onBarClick()
+                    }
+                    true
+                } else {
+                    false
+                }
+            },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = DarkSurfaceCard
@@ -202,6 +217,16 @@ fun BottomPlayerBar(
                                 color = PrimaryCyan,
                                 shape = CircleShape
                             )
+                            .onPreviewKeyEvent { keyEvent ->
+                                if (keyEvent.key == Key.DirectionCenter || keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter) {
+                                    if (keyEvent.type == KeyEventType.KeyUp) {
+                                        onPlayPauseClick()
+                                    }
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
                     ) {
                         Icon(
                             imageVector = if (playbackState == PlaybackState.PLAYING) Icons.Default.Pause else Icons.Default.PlayArrow,
