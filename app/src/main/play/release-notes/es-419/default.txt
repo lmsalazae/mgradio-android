@@ -1,8 +1,8 @@
 Novedades en mgRadio 2.0.0:
-- Metadatos en vivo (Now Playing ICY) en el reproductor y notificación.
+- Metadatos en vivo (Now Playing ICY) en reproductor y notificación.
 - Reconexión automática ante cortes de red.
-- Grabación de transmisiones (con carpeta personalizable en Ajustes).
-- Ecualizador integrado y temporizador de apagado (Sleep Timer) configurable.
-- Historial de emisoras recientes y búsqueda por nombre, frecuencia y género/tags.
-- Temas Oscuro AMOLED, Claro y Material You (sin analíticas ni rastreadores).
-- Mejoras de control remoto y prevención de suspensión para Android TV.
+- Grabación de transmisiones con carpeta personalizable.
+- Ecualizador integrado y Sleep Timer configurable.
+- Historial de recientes y búsqueda por nombre, frecuencia y tags.
+- Temas Oscuro AMOLED, Claro y Material You (sin analíticas).
+- Mejoras de control remoto y suspensión para Android TV.
