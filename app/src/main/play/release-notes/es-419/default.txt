@@ -5,4 +5,4 @@ Novedades en mgRadio 2.0.0:
 - Ecualizador integrado y Sleep Timer configurable.
 - Historial de recientes y búsqueda por nombre, frecuencia y tags.
 - Temas Oscuro AMOLED, Claro y Material You (sin analíticas).
-- Mejoras de control remoto y suspensión para Android TV.
+- Mejoras de control remoto en Android TV y apagado normal de pantalla en móviles para ahorrar batería.
