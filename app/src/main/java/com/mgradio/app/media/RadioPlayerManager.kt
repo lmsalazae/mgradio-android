@@ -2,290 +2,311 @@ package com.mgradio.app.media
 
 import android.content.ComponentName
 import android.content.Context
+import android.media.AudioManager
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.FutureCallback
-import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import com.mgradio.app.domain.model.PlaybackStatus
+import com.mgradio.app.domain.model.PlayerUiState
 import com.mgradio.app.domain.model.Station
+import com.mgradio.app.domain.util.StationUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class PlaybackState {
-    IDLE,
-    BUFFERING,
-    PLAYING,
-    PAUSED,
-    ERROR
-}
-
-data class PlayerUiState(
-    val currentStation: Station? = null,
-    val playbackState: PlaybackState = PlaybackState.IDLE,
-    val errorMessage: String? = null,
-    val failedStation: Station? = null
-)
-
 @Singleton
 class RadioPlayerManager @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val playbackBridge: PlaybackBridge,
+    private val streamRecorder: StreamRecorder
 ) {
-
-    private val _uiState = MutableStateFlow(PlayerUiState())
-    val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val equalizerController = AudioEqualizerController()
 
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var mediaController: MediaController? = null
-    private var pendingStation: Station? = null
+    private var sleepTimerJob: Job? = null
+
+    private val _playerState = MutableStateFlow(
+        PlayerUiState(volumeFraction = readSystemVolumeFraction())
+    )
+    val playerState: StateFlow<PlayerUiState> = _playerState.asStateFlow()
 
     init {
-        initController()
+        connectController()
+        observeBridgeAndChildren()
     }
 
-    private fun initController() {
-        try {
-            val sessionToken = SessionToken(
-                context,
-                ComponentName(context, RadioMediaService::class.java)
-            )
-
-            controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
-            controllerFuture?.let { future ->
-                Futures.addCallback(
-                    future,
-                    object : FutureCallback<MediaController> {
-                        override fun onSuccess(result: MediaController?) {
-                            mediaController = result
-                            setupControllerListener()
-                            pendingStation?.let {
-                                val st = it
-                                pendingStation = null
-                                playStation(st)
-                            }
-                        }
-
-                        override fun onFailure(t: Throwable) {
-                            t.printStackTrace()
-                            _uiState.value = _uiState.value.copy(
-                                currentStation = null,
-                                playbackState = PlaybackState.ERROR,
-                                errorMessage = "No se pudo iniciar el servicio de audio en segundo plano."
-                            )
-                        }
-                    },
-                    MoreExecutors.directExecutor()
-                )
+    private fun observeBridgeAndChildren() {
+        scope.launch {
+            playbackBridge.audioSessionId.collect { sessionId ->
+                if (sessionId > 0) {
+                    equalizerController.attachToSession(sessionId)
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            _uiState.value = _uiState.value.copy(
-                currentStation = null,
-                playbackState = PlaybackState.ERROR,
-                errorMessage = "Error al inicializar el reproductor de radio."
-            )
         }
-    }
-
-    private fun setupControllerListener() {
-        mediaController?.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (_uiState.value.playbackState != PlaybackState.ERROR) {
-                    _uiState.value = _uiState.value.copy(
-                        playbackState = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED
+        scope.launch {
+            playbackBridge.icyNowPlaying.collect { title ->
+                _playerState.update { it.copy(nowPlayingTitle = title) }
+            }
+        }
+        scope.launch {
+            playbackBridge.reconnectAttempt.collect { attempt ->
+                _playerState.update { state ->
+                    state.copy(
+                        reconnectAttempt = attempt,
+                        status = if (attempt > 0) PlaybackStatus.RECONNECTING else state.status
                     )
                 }
             }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_BUFFERING -> {
-                        if (_uiState.value.playbackState != PlaybackState.ERROR) {
-                            _uiState.value = _uiState.value.copy(
-                                playbackState = PlaybackState.BUFFERING,
-                                errorMessage = null
-                            )
-                        }
-                    }
-                    Player.STATE_READY -> {
-                        if (_uiState.value.playbackState != PlaybackState.ERROR) {
-                            val isPlaying = mediaController?.isPlaying == true
-                            _uiState.value = _uiState.value.copy(
-                                playbackState = if (isPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED,
-                                errorMessage = null
-                            )
-                        }
-                    }
-                    Player.STATE_ENDED -> {
-                        _uiState.value = _uiState.value.copy(playbackState = PlaybackState.IDLE)
-                    }
-                    Player.STATE_IDLE -> {
-                        if (_uiState.value.playbackState != PlaybackState.ERROR) {
-                            _uiState.value = _uiState.value.copy(playbackState = PlaybackState.IDLE)
-                        }
-                    }
-                }
+        }
+        scope.launch {
+            equalizerController.state.collect { eqState ->
+                _playerState.update { it.copy(equalizerState = eqState) }
             }
+        }
+        scope.launch {
+            streamRecorder.state.collect { recState ->
+                _playerState.update { it.copy(recordingState = recState) }
+            }
+        }
+    }
 
-            override fun onPlayerError(error: PlaybackException) {
-                error.printStackTrace()
-                val station = _uiState.value.currentStation
-
-                // Detener y limpiar el controlador de forma segura para evitar estados corruptos
-                try {
-                    mediaController?.stop()
-                    mediaController?.clearMediaItems()
-                } catch (e: Exception) {
-                    e.printStackTrace()
+    private fun connectController() {
+        val sessionToken = SessionToken(context, ComponentName(context, RadioMediaService::class.java))
+        val future = MediaController.Builder(context, sessionToken).buildAsync()
+        controllerFuture = future
+        future.addListener(
+            {
+                runCatching {
+                    val controller = future.get()
+                    mediaController = controller
+                    controller.addListener(playerListener)
                 }
+            },
+            MoreExecutors.directExecutor()
+        )
+    }
 
-                val explanation = when (error.errorCode) {
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
-                    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT ->
-                        "No se pudo conectar al servidor de transmisión de '${station?.nombre}' (tiempo de espera o red)."
+    private val playerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            updatePlaybackStatus()
+        }
 
-                    PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
-                    PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND,
-                    PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED ->
-                        "El enlace de streaming de '${station?.nombre}' no está disponible o rechazó la conexión (HTTP ${error.errorCodeName})."
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            updatePlaybackStatus()
+        }
 
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
-                    PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED,
-                    PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ->
-                        "El formato de audio o lista de reproducción de '${station?.nombre}' no es compatible con el reproductor."
-
-                    else ->
-                        "La emisora '${station?.nombre ?: "seleccionada"}' no se encuentra transmitiendo en este momento."
+        override fun onPlayerError(error: PlaybackException) {
+            val attempt = playbackBridge.reconnectAttempt.value
+            if (attempt > 0 && attempt <= RadioMediaService.MAX_RECONNECT_ATTEMPTS) {
+                _playerState.update {
+                    it.copy(
+                        status = PlaybackStatus.RECONNECTING,
+                        reconnectAttempt = attempt,
+                        errorMessage = null
+                    )
                 }
-
-                _uiState.value = _uiState.value.copy(
-                    currentStation = null,
-                    playbackState = PlaybackState.ERROR,
-                    errorMessage = explanation,
+                return
+            }
+            val station = _playerState.value.currentStation
+            val msg = translateError(error)
+            _playerState.update {
+                it.copy(
+                    status = PlaybackStatus.ERROR,
+                    errorMessage = msg,
                     failedStation = station
                 )
             }
-        })
+        }
+    }
+
+    private fun updatePlaybackStatus() {
+        val ctrl = mediaController ?: return
+        val status = when {
+            playbackBridge.reconnectAttempt.value > 0 -> PlaybackStatus.RECONNECTING
+            ctrl.playbackState == Player.STATE_BUFFERING -> PlaybackStatus.BUFFERING
+            ctrl.isPlaying -> PlaybackStatus.PLAYING
+            ctrl.playbackState == Player.STATE_READY && !ctrl.playWhenReady -> PlaybackStatus.PAUSED
+            ctrl.playbackState == Player.STATE_IDLE -> PlaybackStatus.IDLE
+            else -> _playerState.value.status
+        }
+        _playerState.update {
+            it.copy(
+                status = status,
+                errorMessage = if (status == PlaybackStatus.PLAYING) null else it.errorMessage
+            )
+        }
+    }
+
+    fun restoreLastStationPreview(station: Station) {
+        if (_playerState.value.currentStation == null) {
+            _playerState.update { it.copy(currentStation = station, status = PlaybackStatus.IDLE) }
+        }
     }
 
     fun playStation(station: Station) {
-        val streamUrl = station.streamUrl.trim()
-
-        if (streamUrl.isBlank() || (!streamUrl.startsWith("http://", ignoreCase = true) && !streamUrl.startsWith("https://", ignoreCase = true))) {
-            _uiState.value = _uiState.value.copy(
-                currentStation = null,
-                playbackState = PlaybackState.ERROR,
-                errorMessage = "La emisora '${station.nombre}' no tiene una URL de transmisión web válida.",
-                failedStation = station
-            )
-            return
+        if (streamRecorder.state.value.isRecording) {
+            streamRecorder.stopRecording()
         }
-
-        _uiState.value = _uiState.value.copy(
-            currentStation = station,
-            playbackState = PlaybackState.BUFFERING,
-            errorMessage = null,
-            failedStation = null
-        )
-
-        val controller = mediaController
-        if (controller == null) {
-            pendingStation = station
-            return
-        }
-
-        try {
-            val mediaItem = buildMediaItem(station)
-
-            controller.stop()
-            controller.clearMediaItems()
-            controller.setMediaItem(mediaItem)
-            controller.prepare()
-            controller.play()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            _uiState.value = _uiState.value.copy(
-                currentStation = null,
-                playbackState = PlaybackState.ERROR,
-                errorMessage = "No se pudo iniciar la reproducción de '${station.nombre}': ${e.localizedMessage ?: "Error desconocido"}",
-                failedStation = station
+        _playerState.update {
+            it.copy(
+                currentStation = station,
+                status = PlaybackStatus.BUFFERING,
+                nowPlayingTitle = null,
+                errorMessage = null,
+                failedStation = null,
+                reconnectAttempt = 0
             )
         }
+        val ctrl = mediaController ?: return
+        val mediaItem = buildMediaItem(station)
+        ctrl.setMediaItem(mediaItem)
+        ctrl.prepare()
+        ctrl.play()
     }
 
     fun togglePlayPause() {
-        try {
-            mediaController?.let { controller ->
-                if (controller.isPlaying) {
-                    controller.pause()
-                } else {
-                    controller.play()
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        val ctrl = mediaController ?: return
+        val current = _playerState.value.currentStation ?: return
+        if (ctrl.isPlaying) {
+            ctrl.pause()
+        } else if (ctrl.playbackState == Player.STATE_IDLE || ctrl.playbackState == Player.STATE_ENDED) {
+            playStation(current)
+        } else {
+            ctrl.play()
         }
     }
 
     fun stop() {
-        try {
-            mediaController?.stop()
-            mediaController?.clearMediaItems()
-            _uiState.value = PlayerUiState()
-        } catch (e: Exception) {
-            e.printStackTrace()
+        streamRecorder.stopRecording()
+        cancelSleepTimer()
+        mediaController?.stop()
+        mediaController?.clearMediaItems()
+        _playerState.update {
+            it.copy(
+                status = PlaybackStatus.IDLE,
+                nowPlayingTitle = null,
+                reconnectAttempt = 0
+            )
         }
     }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(
-            playbackState = PlaybackState.IDLE,
-            errorMessage = null,
-            failedStation = null,
-            currentStation = null
-        )
+    fun setVolumeFraction(fraction: Float) {
+        val clamped = fraction.coerceIn(0f, 1f)
+        val maxVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val target = (clamped * maxVol).toInt().coerceIn(0, maxVol)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
+        _playerState.update { it.copy(volumeFraction = clamped) }
     }
 
-    companion object {
-        fun buildMediaItem(station: Station): MediaItem {
-            val uri = Uri.parse(station.streamUrl.trim())
-            val metadata = MediaMetadata.Builder()
-                .setTitle(station.nombre)
-                .setSubtitle(station.frecuencia)
-                .setArtworkUri(if (station.logoUrl.isNotBlank()) Uri.parse(station.logoUrl.trim()) else null)
-                .build()
+    fun syncSystemVolume() {
+        _playerState.update { it.copy(volumeFraction = readSystemVolumeFraction()) }
+    }
 
-            val builder = MediaItem.Builder()
-                .setMediaId(station.id)
-                .setUri(uri)
-                .setMediaMetadata(metadata)
-
-            val urlLower = station.streamUrl.lowercase()
-            val typeLower = station.streamType.lowercase()
-
-            when {
-                typeLower == "hls" || urlLower.contains(".m3u8") || urlLower.contains("/hls") || urlLower.contains("playlist") -> {
-                    builder.setMimeType(MimeTypes.APPLICATION_M3U8)
-                }
-                typeLower == "aac" || urlLower.contains(".aac") -> {
-                    builder.setMimeType(MimeTypes.AUDIO_AAC)
-                }
-                typeLower == "mp3" || urlLower.contains(".mp3") -> {
-                    builder.setMimeType(MimeTypes.AUDIO_MPEG)
-                }
+    fun startSleepTimer(minutes: Int, onFinished: () -> Unit) {
+        sleepTimerJob?.cancel()
+        if (minutes <= 0) {
+            _playerState.update { it.copy(sleepTimerRemainingSeconds = null) }
+            return
+        }
+        var remaining = minutes * 60L
+        _playerState.update { it.copy(sleepTimerRemainingSeconds = remaining) }
+        sleepTimerJob = scope.launch {
+            while (remaining > 0) {
+                delay(1000L)
+                remaining--
+                _playerState.update { it.copy(sleepTimerRemainingSeconds = remaining) }
             }
+            stop()
+            _playerState.update { it.copy(sleepTimerRemainingSeconds = null) }
+            onFinished()
+        }
+    }
 
-            return builder.build()
+    fun cancelSleepTimer() {
+        sleepTimerJob?.cancel()
+        sleepTimerJob = null
+        _playerState.update { it.copy(sleepTimerRemainingSeconds = null) }
+    }
+
+    fun toggleRecording(customTreeUri: String?, onError: (String) -> Unit) {
+        if (streamRecorder.state.value.isRecording) {
+            streamRecorder.stopRecording()
+        } else {
+            val station = _playerState.value.currentStation ?: return
+            streamRecorder.startRecording(station, customTreeUri, onError)
+        }
+    }
+
+    fun setEqualizerEnabled(enabled: Boolean) = equalizerController.setEnabled(enabled)
+    fun selectEqualizerPreset(index: Int) = equalizerController.selectPreset(index)
+    fun setEqualizerBand(band: Short, levelMb: Short) = equalizerController.setBandLevel(band, levelMb)
+
+    fun clearError() {
+        _playerState.update { it.copy(errorMessage = null, failedStation = null) }
+    }
+
+    private fun readSystemVolumeFraction(): Float {
+        val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        val cur = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        return (cur.toFloat() / max.toFloat()).coerceIn(0f, 1f)
+    }
+
+    private fun buildMediaItem(station: Station): MediaItem {
+        val subtitle = listOf(station.frecuencia, station.banda, station.ciudad)
+            .filter { it.isNotBlank() }
+            .joinToString(" · ")
+        val metadata = MediaMetadata.Builder()
+            .setTitle(station.nombre)
+            .setSubtitle(subtitle)
+            .setArtist(station.ciudad.ifBlank { station.pais })
+            .setStation(station.nombre)
+            .setArtworkUri(station.logoUrl.takeIf { it.isNotBlank() }?.let(Uri::parse))
+            .setIsPlayable(true)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_RADIO_STATION)
+            .build()
+
+        val builder = MediaItem.Builder()
+            .setMediaId(station.id)
+            .setUri(station.streamUrl)
+            .setMediaMetadata(metadata)
+
+        StationUtils.detectMimeType(station.streamUrl, station.streamType)?.let {
+            builder.setMimeType(it)
+        }
+        return builder.build()
+    }
+
+    private fun translateError(error: PlaybackException): String {
+        return when (error.errorCode) {
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+            PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT ->
+                "Sin conexión con la emisora tras varios intentos."
+            PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+            PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND ->
+                "La transmisión de esta emisora no está disponible."
+            PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
+            PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ->
+                "Formato de audio no compatible."
+            else -> "No se pudo reproducir la emisora (${error.errorCodeName})."
         }
     }
 }

@@ -3,44 +3,29 @@
 *.aar
 *.ap_
 *.aab
-
-# Files for the ART/Dalvik VM
 *.dex
-
-# Java class files
 *.class
 
-# Generated files
-bin/
-gen/
-out/
+# Gradle & build
 build/
 app/build/
 app/release/
-
-# Gradle files
 .gradle/
 buildOutputCleanup/
-
-# Local configuration file (sdk path, etc)
 local.properties
 
-# Android Studio / IntelliJ / VS Code
+# IDEs
 .idea/
 .vscode/
 *.iml
 *.ipr
 *.iws
-.navigation/
 captures/
-.externalNativeBuild/
-.cxx/
-.artifacts/
 
 # Kotlin
 .kotlin/
 
-# Keystores & Passwords (Sensitive data)
+# Keystores, Passwords & Firebase Secrets
 *.jks
 *.keystore
 pass-keystore.txt
@@ -50,6 +35,6 @@ google-services.json
 app/google-services.json
 serviceAccountKey.json
 
-# OS specific files
+# OS
 .DS_Store
 Thumbs.db

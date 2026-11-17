@@ -1,52 +1,72 @@
 package com.mgradio.app.presentation.theme
 
-import androidx.compose.foundation.shape.RoundedCornerShape
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import com.mgradio.app.domain.model.ThemeMode
 
-private val DarkColorScheme = darkColorScheme(
+private val AmoledDarkColorScheme = darkColorScheme(
     primary = PrimaryCyan,
-    onPrimary = OnPrimaryDark,
-    primaryContainer = DarkSurfaceCard,
-    onPrimaryContainer = TextPrimary,
-    inversePrimary = PrimaryCyanVariant,
+    onPrimary = Color.Black,
     secondary = SecondaryTeal,
-    onSecondary = OnPrimaryDark,
-    secondaryContainer = SecondaryContainerDark,
-    onSecondaryContainer = OnSecondaryContainerDark,
-    background = DarkBackground,
-    onBackground = TextPrimary,
-    surface = DarkSurface,
-    onSurface = TextPrimary,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextSecondary,
-    surfaceTint = PrimaryCyan,
-    outline = TextMuted,
-    outlineVariant = DarkSurfaceCardHover,
-    error = StatusOffline,
-    errorContainer = StatusOfflineContainer,
-    onError = TextPrimary,
-    onErrorContainer = OnStatusOfflineContainer
+    onSecondary = Color.Black,
+    background = AmoledBackground,
+    onBackground = AmoledOnBackground,
+    surface = AmoledSurface,
+    onSurface = AmoledOnBackground,
+    surfaceVariant = AmoledSurfaceVariant,
+    onSurfaceVariant = AmoledOnSurfaceVariant,
+    error = ErrorCoral,
+    onError = Color.Black
 )
 
-val Shapes = Shapes(
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(32.dp)
+private val LightRadioColorScheme = lightColorScheme(
+    primary = LightPrimary,
+    onPrimary = Color.White,
+    secondary = LightSecondary,
+    onSecondary = Color.White,
+    background = LightBackground,
+    onBackground = LightOnBackground,
+    surface = LightSurface,
+    onSurface = LightOnBackground,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = LightOnSurfaceVariant,
+    error = Color(0xFFCF222E),
+    onError = Color.White
 )
 
 @Composable
 fun MgRadioTheme(
+    themeMode: ThemeMode,
+    useDynamicColor: Boolean,
     content: @Composable () -> Unit
 ) {
+    val systemDark = isSystemInDarkTheme()
+    val isDark = when (themeMode) {
+        ThemeMode.SYSTEM -> systemDark
+        ThemeMode.LIGHT -> false
+        ThemeMode.AMOLED_DARK -> true
+    }
+
+    val context = LocalContext.current
+    val colorScheme = when {
+        useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        isDark -> AmoledDarkColorScheme
+        else -> LightRadioColorScheme
+    }
+
     MaterialTheme(
-        colorScheme = DarkColorScheme,
-        typography = Typography,
-        shapes = Shapes,
+        colorScheme = colorScheme,
+        typography = MgRadioTypography,
         content = content
     )
 }

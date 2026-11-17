@@ -8,17 +8,25 @@ import javax.inject.Inject
 class GetAllStationsUseCase @Inject constructor(
     private val repository: StationRepository
 ) {
-    operator fun invoke(): Flow<List<Station>> {
-        return repository.getAllStations()
-    }
+    operator fun invoke(): Flow<List<Station>> = repository.getAllStations()
+}
+
+class GetFavoriteStationsUseCase @Inject constructor(
+    private val repository: StationRepository
+) {
+    operator fun invoke(): Flow<List<Station>> = repository.getFavoriteStations()
+}
+
+class GetRecentStationsUseCase @Inject constructor(
+    private val repository: StationRepository
+) {
+    operator fun invoke(): Flow<List<Station>> = repository.getRecentStations()
 }
 
 class RefreshStationsUseCase @Inject constructor(
     private val repository: StationRepository
 ) {
-    suspend operator fun invoke() {
-        repository.refreshStations()
-    }
+    suspend operator fun invoke(): Result<Int> = repository.refreshStations()
 }
 
 class ToggleFavoriteUseCase @Inject constructor(
@@ -29,18 +37,18 @@ class ToggleFavoriteUseCase @Inject constructor(
     }
 }
 
-class GetFavoriteStationsUseCase @Inject constructor(
+class MarkStationStatusUseCase @Inject constructor(
     private val repository: StationRepository
 ) {
-    operator fun invoke(): Flow<List<Station>> {
-        return repository.getFavoriteStations()
+    suspend operator fun invoke(stationId: String, active: Boolean) {
+        repository.markStationStatus(stationId, active)
     }
 }
 
-class MarkStationOfflineUseCase @Inject constructor(
+class RecordRecentPlayUseCase @Inject constructor(
     private val repository: StationRepository
 ) {
     suspend operator fun invoke(stationId: String) {
-        repository.updateStationActiveStatus(stationId, false)
+        repository.recordRecentPlay(stationId)
     }
 }

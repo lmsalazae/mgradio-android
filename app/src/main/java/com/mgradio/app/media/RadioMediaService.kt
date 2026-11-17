@@ -3,47 +3,57 @@ package com.mgradio.app.media
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import com.mgradio.app.MainActivity
+import com.mgradio.app.data.local.StationDao
+import com.mgradio.app.data.local.StationEntity
+import com.mgradio.app.domain.util.StationUtils
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@OptIn(UnstableApi::class)
 @AndroidEntryPoint
-class RadioMediaService : MediaSessionService() {
+class RadioMediaService : MediaLibraryService() {
 
-    private var mediaSession: MediaSession? = null
-    private var exoPlayer: ExoPlayer? = null
+    @Inject lateinit var stationDao: StationDao
+    @Inject lateinit var playbackBridge: PlaybackBridge
 
-    companion object {
-        const val CHANNEL_ID = "radio_playback_channel"
-        const val NOTIFICATION_ID = 1001
-        const val ACTION_PLAY_STATION = "com.mgradio.app.action.PLAY_STATION"
-        const val EXTRA_STATION_ID = "extra_station_id"
-        const val EXTRA_STATION_NAME = "extra_station_name"
-        const val EXTRA_STATION_FREQ = "extra_station_freq"
-        const val EXTRA_STREAM_URL = "extra_stream_url"
-        const val EXTRA_LOGO_URL = "extra_logo_url"
-    }
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var mediaLibrarySession: MediaLibrarySession? = null
+    private lateinit var player: ExoPlayer
 
-    @OptIn(UnstableApi::class)
+    private var reconnectJob: Job? = null
+    private var reconnectAttempt = 0
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
@@ -51,28 +61,12 @@ class RadioMediaService : MediaSessionService() {
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("VLC/3.0.20 LibVLC/3.0.20")
             .setAllowCrossProtocolRedirects(true)
-            .setKeepPostFor302Redirects(true)
-            .setConnectTimeoutMs(20000)
-            .setReadTimeoutMs(20000)
-            .setDefaultRequestProperties(
-                mapOf(
-                    "Icy-MetaData" to "1",
-                    "Accept" to "audio/*, application/ogg, application/x-mpegurl, */*",
-                    "Connection" to "keep-alive"
-                )
-            )
-
-        val dataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
-        val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
+            .setConnectTimeoutMs(20_000)
+            .setReadTimeoutMs(20_000)
+            .setDefaultRequestProperties(mapOf("Icy-MetaData" to "1"))
 
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
-                DefaultLoadControl.DEFAULT_MAX_BUFFER_MS,
-                1500,
-                3000
-            )
-            .setPrioritizeTimeOverSizeThresholds(true)
+            .setBufferDurationsMs(15_000, 50_000, 1500, 3000)
             .build()
 
         val audioAttributes = AudioAttributes.Builder()
@@ -80,26 +74,67 @@ class RadioMediaService : MediaSessionService() {
             .setUsage(C.USAGE_MEDIA)
             .build()
 
-        exoPlayer = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(mediaSourceFactory)
+        player = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(httpDataSourceFactory))
             .setLoadControl(loadControl)
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
-            .build().apply {
-                addListener(object : Player.Listener {
-                    override fun onPlayerError(error: PlaybackException) {
-                        super.onPlayerError(error)
-                        error.printStackTrace()
-                        try {
-                            stop()
-                            clearMediaItems()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                })
+            .build()
+
+        player.addListener(object : Player.Listener {
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                playbackBridge.updateAudioSessionId(audioSessionId)
             }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY) {
+                    reconnectAttempt = 0
+                    playbackBridge.updateReconnectAttempt(0)
+                    playbackBridge.updateAudioSessionId(player.audioSessionId)
+                }
+            }
+
+            override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+                val icy = mediaMetadata.title?.toString()
+                    ?: mediaMetadata.displayTitle?.toString()
+                    ?: mediaMetadata.artist?.toString()
+                val stationName = player.currentMediaItem?.mediaMetadata?.station?.toString()
+                if (!icy.isNullOrBlank() && icy != stationName) {
+                    playbackBridge.updateIcyTitle(icy)
+                }
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                playbackBridge.updateIcyTitle(null)
+                reconnectJob?.cancel()
+                reconnectAttempt = 0
+                playbackBridge.updateReconnectAttempt(0)
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                val isNetworkError = error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
+                    error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT ||
+                    error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
+
+                val currentItem = player.currentMediaItem
+                if (isNetworkError && currentItem != null && reconnectAttempt < MAX_RECONNECT_ATTEMPTS) {
+                    reconnectAttempt++
+                    playbackBridge.updateReconnectAttempt(reconnectAttempt)
+                    val backoffMs = 1000L * (1 shl (reconnectAttempt - 1)) // 1s, 2s, 4s
+                    reconnectJob?.cancel()
+                    reconnectJob = serviceScope.launch {
+                        delay(backoffMs)
+                        player.setMediaItem(currentItem)
+                        player.prepare()
+                        player.playWhenReady = true
+                    }
+                } else {
+                    reconnectAttempt = 0
+                    playbackBridge.updateReconnectAttempt(0)
+                }
+            }
+        })
 
         val sessionActivityPendingIntent = PendingIntent.getActivity(
             this,
@@ -108,106 +143,167 @@ class RadioMediaService : MediaSessionService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val callback = object : MediaSession.Callback {}
-
-        mediaSession = MediaSession.Builder(this, exoPlayer!!)
+        mediaLibrarySession = MediaLibrarySession.Builder(this, player, LibraryCallback())
             .setSessionActivity(sessionActivityPendingIntent)
-            .setCallback(callback)
             .build()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_PLAY_STATION) {
-            val stationId = intent.getStringExtra(EXTRA_STATION_ID) ?: ""
-            val stationName = intent.getStringExtra(EXTRA_STATION_NAME) ?: "Emisora de Radio"
-            val stationFreq = intent.getStringExtra(EXTRA_STATION_FREQ) ?: ""
-            val streamUrl = intent.getStringExtra(EXTRA_STREAM_URL) ?: ""
-            val logoUrl = intent.getStringExtra(EXTRA_LOGO_URL) ?: ""
-
-            if (streamUrl.isNotBlank()) {
-                playStream(
-                    id = stationId,
-                    title = stationName,
-                    subtitle = stationFreq,
-                    streamUrl = streamUrl,
-                    logoUrl = logoUrl
-                )
-            }
-        }
-        return super.onStartCommand(intent, flags, startId)
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? {
+        return mediaLibrarySession
     }
 
-    private fun playStream(
-        id: String,
-        title: String,
-        subtitle: String,
-        streamUrl: String,
-        logoUrl: String
-    ) {
-        val trimmed = streamUrl.trim()
-        if (trimmed.isBlank()) return
-
-        try {
-            val metadata = MediaMetadata.Builder()
-                .setTitle(title)
-                .setSubtitle(subtitle)
-                .setArtworkUri(if (logoUrl.isNotBlank()) Uri.parse(logoUrl.trim()) else null)
-                .build()
-
-            val builder = MediaItem.Builder()
-                .setMediaId(id)
-                .setUri(Uri.parse(trimmed))
-                .setMediaMetadata(metadata)
-
-            val urlLower = trimmed.lowercase()
-            if (urlLower.contains(".m3u8") || urlLower.contains("/hls") || urlLower.contains("playlist")) {
-                builder.setMimeType(MimeTypes.APPLICATION_M3U8)
-            } else if (urlLower.contains(".aac")) {
-                builder.setMimeType(MimeTypes.AUDIO_AAC)
-            } else if (urlLower.contains(".mp3")) {
-                builder.setMimeType(MimeTypes.AUDIO_MPEG)
-            }
-
-            exoPlayer?.apply {
-                stop()
-                clearMediaItems()
-                setMediaItem(builder.build())
-                prepare()
-                playWhenReady = true
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (!player.playWhenReady) {
+            stopSelf()
         }
-    }
-
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
-        return mediaSession
     }
 
     override fun onDestroy() {
-        try {
-            mediaSession?.run {
-                player.release()
-                release()
-                mediaSession = null
-            }
-            exoPlayer = null
-        } catch (e: Exception) {
-            e.printStackTrace()
+        reconnectJob?.cancel()
+        serviceScope.cancel()
+        mediaLibrarySession?.run {
+            player.release()
+            release()
+            mediaLibrarySession = null
         }
         super.onDestroy()
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Reproducción de Radio"
-            val descriptionText = "Controles de reproducción en vivo"
-            val importance = NotificationManager.IMPORTANCE_LOW
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
+            val manager = getSystemService(NotificationManager::class.java)
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Reproducción de Radio",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Controles multimedia de mgRadio"
             }
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            manager.createNotificationChannel(channel)
         }
+    }
+
+    /**
+     * Callback para Android Auto (MediaLibraryService): expone Favoritas, Recientes y Todas.
+     */
+    private inner class LibraryCallback : MediaLibrarySession.Callback {
+
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val rootExtras = Bundle().apply {
+                putBoolean("android.media.browse.CONTENT_STYLE_SUPPORTED", true)
+            }
+            val root = MediaItem.Builder()
+                .setMediaId(ROOT_ID)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle("mgRadio")
+                        .setIsBrowsable(true)
+                        .setIsPlayable(false)
+                        .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                        .setExtras(rootExtras)
+                        .build()
+                )
+                .build()
+            return Futures.immediateFuture(LibraryResult.ofItem(root, params))
+        }
+
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
+            serviceScope.launch(Dispatchers.IO) {
+                val items = when (parentId) {
+                    ROOT_ID -> listOf(
+                        browsableFolder(NODE_FAVORITES, "Favoritas"),
+                        browsableFolder(NODE_RECENTS, "Recientes"),
+                        browsableFolder(NODE_ALL, "Todas las emisoras")
+                    )
+                    NODE_FAVORITES -> stationDao.getFavoriteStationsOnce().map(::stationToMediaItem)
+                    NODE_RECENTS -> stationDao.getRecentStationsOnce().map(::stationToMediaItem)
+                    NODE_ALL -> stationDao.getAllStationsOnce().take(100).map(::stationToMediaItem)
+                    else -> emptyList()
+                }
+                future.set(LibraryResult.ofItemList(ImmutableList.copyOf(items), params))
+            }
+            return future
+        }
+
+        override fun onAddMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: MutableList<MediaItem>
+        ): ListenableFuture<MutableList<MediaItem>> {
+            val future = SettableFuture.create<MutableList<MediaItem>>()
+            serviceScope.launch(Dispatchers.IO) {
+                val resolved = mediaItems.map { item ->
+                    if (item.localConfiguration != null) {
+                        item
+                    } else {
+                        val entity = stationDao.getStationById(item.mediaId)
+                        if (entity != null) stationToMediaItem(entity) else item
+                    }
+                }.toMutableList()
+                future.set(resolved)
+            }
+            return future
+        }
+    }
+
+    private fun browsableFolder(id: String, title: String): MediaItem {
+        return MediaItem.Builder()
+            .setMediaId(id)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setIsBrowsable(true)
+                    .setIsPlayable(false)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_RADIO_STATIONS)
+                    .build()
+            )
+            .build()
+    }
+
+    private fun stationToMediaItem(entity: StationEntity): MediaItem {
+        val subtitle = listOf(entity.frecuencia, entity.banda, entity.ciudad)
+            .filter { it.isNotBlank() }
+            .joinToString(" · ")
+        val metadata = MediaMetadata.Builder()
+            .setTitle(entity.nombre)
+            .setSubtitle(subtitle)
+            .setArtist(entity.ciudad.ifBlank { entity.pais })
+            .setStation(entity.nombre)
+            .setArtworkUri(entity.logoUrl.takeIf { it.isNotBlank() }?.let(Uri::parse))
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_RADIO_STATION)
+            .build()
+
+        val builder = MediaItem.Builder()
+            .setMediaId(entity.id)
+            .setUri(entity.streamUrl)
+            .setMediaMetadata(metadata)
+
+        StationUtils.detectMimeType(entity.streamUrl, entity.streamType)?.let {
+            builder.setMimeType(it)
+        }
+        return builder.build()
+    }
+
+    companion object {
+        private const val CHANNEL_ID = "radio_playback_channel"
+        private const val ROOT_ID = "mgradio_root"
+        private const val NODE_FAVORITES = "node_favorites"
+        private const val NODE_RECENTS = "node_recents"
+        private const val NODE_ALL = "node_all"
+        const val MAX_RECONNECT_ATTEMPTS = 3
     }
 }

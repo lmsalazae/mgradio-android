@@ -4,118 +4,69 @@ import com.mgradio.app.domain.model.Station
 import java.text.Normalizer
 
 object StationUtils {
-    const val ALL_COUNTRIES = "Todos los países"
-    const val ALL_CITIES = "Todas las ciudades"
 
-    private val DIACRITICS_REGEX = "\\p{InCombiningDiacriticalMarks}+".toRegex()
+    private val combiningMarksRegex = Regex("\\p{InCombiningDiacriticalMarks}+")
 
-    fun normalizeText(text: String): String {
-        val normalized = Normalizer.normalize(text.trim(), Normalizer.Form.NFD)
-        return DIACRITICS_REGEX.replace(normalized, "").lowercase()
+    fun normalizeText(input: String): String {
+        val decomposed = Normalizer.normalize(input.trim().lowercase(), Normalizer.Form.NFD)
+        return combiningMarksRegex.replace(decomposed, "")
     }
 
-    fun matchesCountry(stationCountry: String, selectedCountry: String): Boolean {
-        if (selectedCountry == ALL_COUNTRIES) return true
-        val normStation = normalizeText(stationCountry)
-        val normSelected = normalizeText(selectedCountry)
-        if (normStation == normSelected) return true
-        if (normStation.contains(normSelected)) return true
+    /**
+     * Búsqueda normalizada sin acentos por nombre, frecuencia, categoría y tags.
+     */
+    fun matchesSearchQuery(station: Station, rawQuery: String): Boolean {
+        val query = normalizeText(rawQuery)
+        if (query.isEmpty()) return true
+        if (normalizeText(station.nombre).contains(query)) return true
+        if (normalizeText(station.frecuencia).contains(query)) return true
+        if (normalizeText(station.categoria).contains(query)) return true
+        if (station.tags.any { normalizeText(it).contains(query) }) return true
         return false
     }
 
-    fun matchesCity(stationCity: String, selectedCity: String): Boolean {
-        if (selectedCity == ALL_CITIES) return true
-        val normStation = normalizeText(stationCity)
-        val normSelected = normalizeText(selectedCity)
-        if (normStation == normSelected) return true
-        return normStation.contains(normSelected)
-    }
-
-    fun matchesCategory(stationCategory: String, selectedCategory: String?): Boolean {
-        if (selectedCategory == null) return true
-        return stationCategory.equals(selectedCategory, ignoreCase = true)
-    }
-
-    fun matchesSearchQuery(stationName: String, query: String): Boolean {
-        if (query.isBlank()) return true
-        val normName = normalizeText(stationName)
-        val normQuery = normalizeText(query)
-        return normName.contains(normQuery)
-    }
-
-    fun filterStations(
+    /**
+     * Filtra y ordena priorizando coincidencias cuyo nombre comienza con el prefijo buscado.
+     */
+    fun filterAndSortStations(
         stations: List<Station>,
-        country: String = ALL_COUNTRIES,
-        city: String = ALL_CITIES,
-        category: String? = null,
-        searchQuery: String = ""
+        query: String,
+        country: String,
+        city: String,
+        category: String,
+        allCountriesLabel: String,
+        allCitiesLabel: String,
+        allCategoriesLabel: String
     ): List<Station> {
-        val filtered = stations.filter { station ->
-            matchesCountry(station.pais, country) &&
-                    matchesCity(station.ciudad, city) &&
-                    matchesCategory(station.categoria, category) &&
-                    matchesSearchQuery(station.nombre, searchQuery)
-        }
-
-        if (searchQuery.isBlank()) {
-            return filtered
-        }
-
-        val normQuery = normalizeText(searchQuery)
-        // Posicionar las coincidencias más próximas: las que inician con el texto buscado primero
-        return filtered.sortedWith(
-            compareBy(
-                { !normalizeText(it.nombre).startsWith(normQuery) },
-                { it.orden },
-                { it.nombre }
+        val normQuery = normalizeText(query)
+        return stations
+            .filter { station ->
+                (country == allCountriesLabel || station.pais.equals(country, ignoreCase = true)) &&
+                    (city == allCitiesLabel || station.ciudad.equals(city, ignoreCase = true)) &&
+                    (category == allCategoriesLabel || station.categoria.equals(category, ignoreCase = true)) &&
+                    matchesSearchQuery(station, query)
+            }
+            .sortedWith(
+                compareByDescending<Station> {
+                    normQuery.isNotEmpty() && normalizeText(it.nombre).startsWith(normQuery)
+                }.thenBy { it.orden }
+                    .thenBy { normalizeText(it.nombre) }
             )
-        )
     }
 
-    fun extractCountries(stations: List<Station>): List<String> {
-        val countries = mutableListOf(ALL_COUNTRIES)
-        countries.addAll(
-            stations.map { it.pais.trim() }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .sorted()
-        )
-        return countries.distinct()
-    }
-
-    fun extractCities(stations: List<Station>, selectedCountry: String): List<String> {
-        val filtered = stations.filter { matchesCountry(it.pais, selectedCountry) }
-        val cities = mutableListOf(ALL_CITIES)
-        cities.addAll(
-            filtered.map { it.ciudad.trim() }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .sorted()
-        )
-        return cities.distinct()
-    }
-
-    fun extractCategories(stations: List<Station>): List<String> {
-        return stations.map { it.categoria.trim() }
-            .filter { it.isNotBlank() }
-            .distinct()
-            .sorted()
-    }
-
-    fun detectMimeType(streamUrl: String, streamType: String): String? {
-        val urlLower = streamUrl.trim().lowercase()
-        val typeLower = streamType.trim().lowercase()
-
+    /**
+     * Detección unificada de MIME type para Media3 / ExoPlayer.
+     */
+    fun detectMimeType(streamUrl: String, declaredType: String): String? {
+        val url = streamUrl.lowercase()
+        val type = declaredType.lowercase()
         return when {
-            typeLower == "hls" || urlLower.contains(".m3u8") || urlLower.contains("/hls") || urlLower.contains("playlist") -> {
-                "application/x-mpegURL"
-            }
-            typeLower == "aac" || urlLower.contains(".aac") -> {
-                "audio/mp4a-latm"
-            }
-            typeLower == "mp3" || urlLower.contains(".mp3") -> {
-                "audio/mpeg"
-            }
+            url.contains(".m3u8") || type.contains("hls") -> "application/x-mpegURL"
+            url.contains(".pls") || type.contains("pls") -> "audio/x-scpls"
+            url.contains(".m3u") || type.contains("m3u") -> "audio/x-mpegurl"
+            url.contains(".aac") || type.contains("aac") -> "audio/aac"
+            url.contains(".ogg") || type.contains("ogg") -> "audio/ogg"
+            url.contains(".mp3") || type.contains("mp3") || type.contains("mpeg") -> "audio/mpeg"
             else -> null
         }
     }

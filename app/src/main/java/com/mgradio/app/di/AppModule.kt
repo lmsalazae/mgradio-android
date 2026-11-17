@@ -3,11 +3,13 @@ package com.mgradio.app.di
 import android.content.Context
 import androidx.room.Room
 import com.google.firebase.firestore.FirebaseFirestore
+import com.mgradio.app.data.local.DataStorePreferencesRepository
 import com.mgradio.app.data.local.RadioDatabase
-import com.mgradio.app.data.local.dao.StationDao
+import com.mgradio.app.data.local.StationDao
 import com.mgradio.app.data.remote.FirestoreRemoteDataSource
 import com.mgradio.app.data.remote.RemoteDataSource
 import com.mgradio.app.data.repository.StationRepositoryImpl
+import com.mgradio.app.domain.repository.PreferencesRepository
 import com.mgradio.app.domain.repository.StationRepository
 import dagger.Module
 import dagger.Provides
@@ -26,34 +28,34 @@ object AppModule {
         return Room.databaseBuilder(
             context,
             RadioDatabase::class.java,
-            "mgradio.db"
-        ).fallbackToDestructiveMigration(dropAllTables = true).build()
+            "mgradio_database"
+        )
+            .addMigrations(RadioDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides
-    @Singleton
-    fun provideStationDao(database: RadioDatabase): StationDao {
-        return database.stationDao()
-    }
+    fun provideStationDao(database: RadioDatabase): StationDao = database.stationDao()
 
     @Provides
     @Singleton
-    fun provideFirebaseFirestore(): FirebaseFirestore {
-        return FirebaseFirestore.getInstance()
-    }
+    fun provideFirebaseFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
 
     @Provides
     @Singleton
-    fun provideRemoteDataSource(firestore: FirebaseFirestore): RemoteDataSource {
-        return FirestoreRemoteDataSource(firestore)
-    }
+    fun provideRemoteDataSource(firestore: FirebaseFirestore): RemoteDataSource =
+        FirestoreRemoteDataSource(firestore)
 
     @Provides
     @Singleton
     fun provideStationRepository(
         stationDao: StationDao,
         remoteDataSource: RemoteDataSource
-    ): StationRepository {
-        return StationRepositoryImpl(stationDao, remoteDataSource)
-    }
+    ): StationRepository = StationRepositoryImpl(stationDao, remoteDataSource)
+
+    @Provides
+    @Singleton
+    fun providePreferencesRepository(
+        @ApplicationContext context: Context
+    ): PreferencesRepository = DataStorePreferencesRepository(context)
 }
