@@ -38,3 +38,7 @@ serviceAccountKey.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Documentación interna Markdown (excluir todo .md excepto README.md)
+*.md
+!README.md
