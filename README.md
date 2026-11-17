@@ -1,15 +1,15 @@
-# 📻 mgRadio — Emisoras en Vivo para Android
+# 📻 mgRadio — Emisoras en Vivo para Android, TV y Auto
 
 <p align="center">
   <img src="docs/graphics/app_icon_512x512.png" width="128" height="128" alt="mgRadio Icon" />
 </p>
 
 <p align="center">
-  <strong>Aplicación nativa de streaming de radio en vivo para Android con arquitectura Offline-First, diseño moderno en Jetpack Compose y motor de audio en segundo plano impulsado por AndroidX Media3 (ExoPlayer).</strong>
+  <strong>Aplicación nativa de streaming de radio en vivo para Android (Móvil, Android TV y Android Auto) con catálogo Offline-First en Room, cero telemetría y motor de audio AndroidX Media3 (ExoPlayer).</strong>
 </p>
 
 <p align="center">
-  <a href="#-tecnologías-y-stack"><img src="https://img.shields.io/badge/Kotlin-2.0+-7F52FF.svg?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin"></a>
+  <a href="#-tecnologías-y-stack"><img src="https://img.shields.io/badge/Kotlin-2.2+-7F52FF.svg?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin"></a>
   <a href="#-tecnologías-y-stack"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4.svg?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose"></a>
   <a href="#-tecnologías-y-stack"><img src="https://img.shields.io/badge/AndroidX%20Media3-ExoPlayer-3DDC84.svg?style=flat-square&logo=android&logoColor=white" alt="ExoPlayer"></a>
   <a href="#-tecnologías-y-stack"><img src="https://img.shields.io/badge/Firebase-Firestore-FFCA28.svg?style=flat-square&logo=firebase&logoColor=black" alt="Firebase"></a>
@@ -34,79 +34,78 @@
 4. [Estructura del Código](#-estructura-del-código)
 5. [Tecnologías y Stack](#-tecnologías-y-stack)
 6. [Configuración y Puesta en Marcha](#-configuración-y-puesta-en-marcha)
-7. [Compilación y Builds](#-compilación-y-builds)
-8. [Ecosistema y Backend](#-ecosistema-y-backend)
-9. [Privacidad y Políticas](#-privacidad-y-políticas)
-10. [Licencia](#-licencia)
+7. [Compilación y Publicación](#-compilación-y-publicación)
+8. [Privacidad y Políticas](#-privacidad-y-políticas)
+9. [Licencia](#-licencia)
 
 ---
 
 ## 🌟 Visión General
 
-**mgRadio** es una aplicación nativa para Android diseñada para ofrecer una experiencia de audio en streaming fluida, estable y visualmente atractiva. 
+**mgRadio** (`v2.0.0`) es una aplicación nativa para Android diseñada para ofrecer reproducción de radio en vivo estable, rápida y privada.
 
-El proyecto implementa un enfoque **Offline-First**: la aplicación inicia de inmediato consumiendo la base de datos local en **Room**, mientras sincroniza en segundo plano el catálogo actualizado de emisoras desde **Firebase Firestore**. El reproductor de audio utiliza **AndroidX Media3 (ExoPlayer)** integrado con un `MediaSessionService` para permitir reproducción continua en segundo plano, control por notificación multimedia y compatibilidad con pantallas de bloqueo y dispositivos Bluetooth.
-
-> [!NOTE]
-> **Diseño Multipaís & Multiciudad:** Aunque el catálogo inicial está enfocado en las estaciones de la **Ciudad de México (CDMX)** y **Colombia**, la arquitectura de datos, los selectores de la interfaz de usuario y el backend están preparados para escalar a múltiples regiones y países sin requerir modificaciones estructurales.
+- **Catálogo Offline-First:** La interfaz lee siempre desde **Room** (`mgradio_database`), permitiendo arrancar al instante, filtrar, consultar favoritas e historial de recientes incluso sin conexión. **Firebase Firestore** se utiliza únicamente en modo lectura para sincronizar el catálogo curado en segundo plano preservando favoritos locales.
+- **Motor Media3 Completo:** Usa `MediaLibraryService` + `ExoPlayer` con soporte para **Android Auto**, metadatos **ICY (*Now Playing*)**, reconexión automática ante cortes de red, ecualizador integrado, grabación directa y temporizador de apagado.
+- **Privacidad Total:** Sin `firebase-analytics` ni rastreadores de terceros.
 
 ---
 
 ## ✨ Características Principales
 
-- 📻 **Streaming Universal de Alta Calidad:** Soporte para transmisiones en vivo mediante protocolos **Icecast**, **Shoutcast** y **HLS (`.m3u8`)** en formatos **AAC, AAC+ y MP3**.
-- 🎵 **Reproducción en Segundo Plano:** Servicio en primer plano (`RadioMediaService`) con `MediaSessionService`, gestión de *Audio Focus*, pausa automática ante llamadas entrantes y reconexión resiliente ante caídas de red.
-- 🎛️ **Controles del Sistema:** Notificación enriquecida de controles multimedia, soporte para Android Auto / Bluetooth y pantalla de bloqueo.
-- 🌍 **Filtros Dinámicos por País y Ciudad:** Selector desplegable interactivo para explorar emisoras organizadas geográficamente (e.g. México / CDMX, Colombia / Bogotá).
-- 🔍 **Buscador Rápido en Tiempo Real:** Búsqueda instantánea por nombre de emisora, frecuencia (FM/AM) o género musical.
-- ⭐ **Sistema de Favoritos:** Marcado rápido de emisoras favoritas con persistencia en base de datos local y pestaña dedicada.
-- 📱 **Mini Reproductor y Reproductor Completo:**
-  - *Bottom Player Bar* accesible desde cualquier sección.
-  - *Full Screen Player Sheet* con portada en alta resolución, indicador visual de buffer/reproducción, controles de volumen e información detallada de la transmisión.
-- ⚡ **Modo Offline-First:** Arranque ultrarrápido sin pantalla de bloqueo por carga de red.
-- 🌙 **Diseño Moderno Material 3:** Interfaz oscura (Dark Theme) optimizada para paneles AMOLED, con paleta de colores personalizada (*Primary Cyan & Dark Surface*) y animaciones fluidas.
+- 📻 **Streaming Universal:** Soporte para **Icecast**, **Shoutcast** y **HLS (`.m3u8`)** en formatos **AAC, AAC+ y MP3**.
+- 🎵 **Metadatos ICY en Vivo (*Now Playing*):** Muestra el título/artista transmitido por la emisora en el mini-reproductor, reproductor completo y notificación multimedia.
+- 🔄 **Reconexión Automática:** Reintentos automáticos con *backoff* exponencial (hasta 3 intentos) ante caídas temporales de red.
+- 🎙️ **Grabación de Transmisiones:** Graba streams MP3/AAC en `Music/mgRadio` o en cualquier carpeta elegida por SAF (`OpenDocumentTree`) desde **Ajustes**.
+- 🎚️ **Ecualizador Integrado:** Control de presets y bandas conectado al `audioSessionId` real de `ExoPlayer`.
+- ⏱️ **Sleep Timer Configurable:** Temporizador de apagado con tiempos personalizables desde Ajustes.
+- 🔍 **Búsqueda y Filtros Dinámicos:** Búsqueda sin acentos por nombre, frecuencia, categoría o etiquetas (`tags`), filtros persistentes por país/ciudad y contadores dinámicos en pestañas (**Todas**, **Favoritas**, **Recientes**, **Offline**).
+- 📺 **Android TV y Control Remoto:** Lanzador Leanback, banner de TV, navegación D-Pad con anillos de foco, soporte de teclas multimedia (`Play/Pause/Stop`) y prevención de suspensión (`FLAG_KEEP_SCREEN_ON`) respetando el Sleep Timer.
+- 🚗 **Android Auto:** Árbol navegable vía `MediaLibraryService` (*Favoritas*, *Recientes*, *Todas*).
+- 🎨 **Temas Material 3:** **Oscuro AMOLED**, **Claro**, **Sistema** y **Material You** (*Dynamic Color* en Android 12+).
 
 ---
 
 ## 🏗️ Arquitectura del Proyecto
 
-El proyecto sigue las directrices de **Clean Architecture** y el patrón de diseño **MVVM (Model-View-ViewModel)** con **Unidirectional Data Flow (UDF)**:
+El proyecto sigue **Clean Architecture** + **MVVM / UDF (Unidirectional Data Flow)**:
 
 ```mermaid
 flowchart TD
     subgraph Presentation_Layer ["🎨 Capa de Presentación (UI)"]
         UI["MainScreen / Jetpack Compose"]
-        COMP["BottomPlayerBar / FullScreenPlayerSheet"]
+        PLAYER["BottomPlayerBar / FullScreenPlayerSheet / EqualizerSheet"]
+        SETTINGS["SettingsSheet (Tema, Carpeta SAF, Sleep Presets)"]
         VM["MainViewModel (StateFlow & UDF)"]
-        UI <--> COMP
+        UI <--> PLAYER & SETTINGS
         UI <--> VM
     end
 
     subgraph Domain_Layer ["🧠 Capa de Dominio"]
-        UC1["GetStationsUseCase"]
-        UC2["ToggleFavoriteUseCase"]
-        UC3["SyncStationsUseCase"]
+        UC["UseCases (Stations, Refresh, Favorites, Recents)"]
+        UTILS["StationUtils (Búsqueda NFD & MIME Types)"]
     end
 
     subgraph Data_Layer ["💾 Capa de Datos (Offline-First)"]
         REPO["StationRepositoryImpl"]
-        ROOM[("Room DB (Local Cache)")]
-        FIRESTORE["Firebase Firestore SDK (Remote CMS)"]
+        ROOM[("Room DB v2 (stations, recent_plays)")]
+        DS[("DataStore Preferences")]
+        FIRESTORE["Firebase Firestore (Solo lectura)"]
         REPO --> ROOM
         REPO --> FIRESTORE
     end
 
-    subgraph Media_Layer ["🔊 Capa de Reproducción de Audio"]
-        PLAYER_MGR["RadioPlayerManager"]
-        SERVICE["RadioMediaService (MediaSessionService)"]
-        EXO["AndroidX Media3 ExoPlayer"]
-        SERVICE --> EXO
-        PLAYER_MGR <--> SERVICE
+    subgraph Media_Layer ["🔊 Capa Multimedia (Media3)"]
+        MGR["RadioPlayerManager"]
+        SVC["RadioMediaService (MediaLibraryService + ExoPlayer)"]
+        REC["StreamRecorder (MediaStore / SAF)"]
+        EQ["AudioEqualizerController"]
+        SVC <--> MGR
+        MGR --> REC & EQ
     end
 
-    VM --> UC1 & UC2 & UC3
-    UC1 & UC2 & UC3 --> REPO
-    VM --> PLAYER_MGR
+    VM --> UC & UTILS & DS
+    UC --> REPO
+    VM --> MGR
 ```
 
 ---
@@ -115,162 +114,99 @@ flowchart TD
 
 ```text
 app/src/main/java/com/mgradio/app/
-├── RadioApplication.kt              # Inicialización de Hilt y Application context
-├── MainActivity.kt                  # Activity principal con Surface & Theme de Compose
-├── data/
-│   ├── local/                       # Room Database, Entity (StationEntity), DAOs
-│   ├── mapper/                      # Mapeo bidireccional entre DTOs, Entidades y Modelos de Dominio
-│   ├── remote/                      # Cliente y DataSources de Firebase Firestore
-│   └── repository/                  # Implementación del repositorio de estaciones (Offline-First)
-├── di/                              # Módulos de inyección de dependencias con Hilt (Database, Audio, etc.)
+├── RadioApplication.kt              # Inicialización de Hilt
+├── MainActivity.kt                  # Edge-to-Edge, temas y FLAG_KEEP_SCREEN_ON
+├── di/AppModule.kt                  # Room (MIGRATION_1_2), Firestore, DataStore
 ├── domain/
-│   ├── model/                       # Modelos de dominio puros (Station, Country, City)
-│   ├── repository/                  # Interfaces de repositorio
-│   └── util/                        # Utilidades y extensiones de datos
+│   ├── model/Models.kt              # Station, PlayerUiState, EqualizerState, UserPreferences
+│   ├── repository/Repositories.kt   # StationRepository, PreferencesRepository
+│   ├── usecase/StationUseCases.kt   # Casos de uso de catálogo, favoritos y recientes
+│   └── util/StationUtils.kt         # Búsqueda normalizada y detección de MIME types
+├── data/
+│   ├── local/                       # RadioDatabase, StationDao, DataStorePreferencesRepository
+│   ├── remote/                      # FirestoreRemoteDataSource, StationDtoAndMapper
+│   └── repository/                  # StationRepositoryImpl (sincronización no destructiva)
 ├── media/
-│   ├── RadioMediaService.kt         # MediaSessionService de Media3 en primer plano
-│   └── RadioPlayerManager.kt        # Controlador y observador del estado de reproducción
+│   ├── RadioMediaService.kt         # MediaLibraryService (ExoPlayer, ICY, Auto, Reconexión)
+│   ├── RadioPlayerManager.kt        # MediaController, volumen, Sleep Timer
+│   ├── StreamRecorder.kt            # Grabación HTTP/ICY a MediaStore / SAF
+│   ├── AudioEqualizerController.kt  # Control de bandas android.media.audiofx.Equalizer
+│   └── PlaybackBridge.kt            # Estado en vivo de audioSessionId, ICY y reconexión
 └── presentation/
-    ├── components/                  # Componentes reutilizables de UI (Player, Cards, Dropdowns, Search)
-    ├── main/                        # Pantalla principal, UiState y ViewModel
-    └── theme/                       # Configuración de tema Material 3, colores y tipografía
+    ├── main/                        # MainViewModel, MainScreen (Móvil y Android TV)
+    ├── player/PlayerSheets.kt       # BottomPlayerBar, FullScreenPlayerSheet, EqualizerSheet, SleepTimerDialog
+    ├── settings/SettingsSheet.kt    # Temas, Material You, carpeta de grabaciones, Sleep presets
+    └── theme/                       # Color.kt, Theme.kt, Type.kt, TvFocusModifier.kt
 ```
 
 ---
 
 ## 🛠️ Tecnologías y Stack
 
-| Categoría | Tecnología / Librería | Versión / Detalle |
+| Categoría | Tecnología / Librería | Detalle |
 | :--- | :--- | :--- |
-| **Lenguaje** | [Kotlin](https://kotlinlang.org/) | `2.0+` |
-| **UI Framework** | [Jetpack Compose](https://developer.android.com/jetpack/compose) | Material Design 3 (BOM) |
-| **Inyección de Dependencias** | [Hilt (Dagger-Hilt)](https://dagger.dev/hilt/) | KSP Compiler |
-| **Base de Datos Local** | [AndroidX Room](https://developer.android.com/training/data-storage/room) | Room KTX + Coroutines |
-| **Motor de Audio** | [AndroidX Media3](https://developer.android.com/guide/topics/media/media3) | ExoPlayer, HLS & Session |
-| **Backend & Cloud CMS** | [Firebase Firestore](https://firebase.google.com/docs/firestore) | Firebase Android BoM |
-| **Carga de Imágenes** | [Coil Compose](https://coil-kt.github.io/coil/) | Carga asíncrona de logos con caché |
-| **Concurrencia** | [Kotlin Coroutines & Flow](https://kotlinlang.org/docs/coroutines-overview.html) | StateFlow / SharedFlow |
-| **Plataforma SDK** | Android SDK | Min: **26** (8.0 Oreo) / Target: **36** (16) |
+| **Lenguaje** | [Kotlin](https://kotlinlang.org/) | `2.2.10` |
+| **UI Framework** | [Jetpack Compose](https://developer.android.com/jetpack/compose) | Material Design 3 (`2024.11.00`) |
+| **Inyección de Dependencias** | [Hilt (Dagger-Hilt)](https://dagger.dev/hilt/) | `2.57.1` + KSP `2.3.6` |
+| **Base de Datos Local** | [AndroidX Room](https://developer.android.com/training/data-storage/room) | `2.7.0` (`MIGRATION_1_2`) |
+| **Preferencias** | [DataStore Preferences](https://developer.android.com/topic/libraries/architecture/datastore) | `1.1.2` |
+| **Motor de Audio** | [AndroidX Media3](https://developer.android.com/guide/topics/media/media3) | `1.4.1` (ExoPlayer, HLS, MediaLibraryService) |
+| **Catálogo Remoto** | [Firebase Firestore](https://firebase.google.com/docs/firestore) | Solo lectura (sin Firebase Analytics) |
+| **Carga de Imágenes** | [Coil Compose](https://coil-kt.github.io/coil/) | `2.7.0` |
+| **Publicación Play Store** | [Gradle Play Publisher](https://github.com/Triple-T/gradle-play-publisher) | `3.12.1` |
+| **Plataforma SDK** | Android SDK | Min: **26** (8.0) / Target: **36** (16) |
 
 ---
 
 ## 🚀 Configuración y Puesta en Marcha
 
 ### 1. Prerrequisitos
-
-- **Android Studio** (Koala / Ladybug o superior)
-- **JDK 17** configurado en el entorno
+- **Android Studio** (Ladybug o superior)
+- **JDK 17**
 - Dispositivo físico o emulador con **Android 8.0 (API 26)** o superior
 
-### 2. Clonar el repositorio
-
+### 2. Clonar y configurar Firebase
 ```bash
 git clone https://github.com/lmsalazae/mgradio-android.git
 cd mgradio-android
 ```
-
-### 3. Configuración de Firebase
-
-1. Crea un proyecto en [Firebase Console](https://console.firebase.google.com/).
-2. Añade una aplicación Android con el Package Name `com.mgradio.app`.
-3. Descarga el archivo `google-services.json` y colócalo en el directorio del módulo:
-   ```text
-   radio-android/app/google-services.json
-   ```
-4. Habilita **Cloud Firestore** en tu proyecto de Firebase. Las reglas recomendadas de lectura pública y escritura protegida son:
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /stations/{stationId} {
-         allow read: if true;
-         allow write: if false; // Solo administradores mediante CLI / Service Account
-       }
-     }
-   }
-   ```
+Coloca tu `google-services.json` en `app/google-services.json` (usa `app/google-services.json.example` como referencia).
 
 ---
 
-## 📦 Compilación y Builds
-
-### Ejecutar en modo Debug
-
-Para compilar e instalar directamente en un dispositivo o emulador conectado:
+## 📦 Compilación y Publicación
 
 ```bash
+# Ejecutar pruebas unitarias JVM
+./gradlew testDebugUnitTest
+
+# Compilar e instalar en dispositivo/TV conectado por ADB
 ./gradlew installDebug
-```
 
-### Ejecutar pruebas unitarias
-
-```bash
-./gradlew test
-```
-
-### Generar APK o Android App Bundle (AAB) para Producción
-
-El proyecto incluye configuración de firmado y optimización con **R8**:
-
-```bash
-# Generar APK de Release
-./gradlew assembleRelease
-
-# Generar App Bundle (.aab) para Google Play Store
+# Generar Android App Bundle (.aab) firmado para Google Play
 ./gradlew bundleRelease
+
+# Subir bundle a Google Play Console (requiere service account JSON configurado)
+./gradlew publishReleaseBundle
 ```
-
-Los artefactos generados se ubicarán en `app/build/outputs/` o en la carpeta `app/release/`.
-
----
-
-## 🌐 Ecosistema y Backend
-
-Para el mantenimiento, descubrimiento y sincronización del catálogo de emisoras en **Cloud Firestore**, el ecosistema cuenta con una herramienta CLI desarrollada en Python:
-
-- **Descubrimiento y Scraping:** Extrae emisoras públicas y abiertas desde directorios comunitarios como *Radio-Browser API*.
-- **Verificación de Streams:** Ejecuta *health-checks* HTTP `HEAD/GET` para validar que las URLs de audio transmitan con código de respuesta `200 OK`.
-- **Sincronización:** Ejecuta operaciones de *UPSERT* en Firebase Firestore categorizando por país y ciudad.
-
-Consulta la documentación técnica en la carpeta [`docs/`](docs/) para mayores detalles de arquitectura y despliegue:
-- [Especificaciones Generales](especificaciones-generales.md)
-- [Arquitectura del Sistema](docs/arquitectura.md)
-- [Plan de Desarrollo](docs/plan-desarrollo.md)
-- [Ficha de Google Play Store](docs/store-listing.md)
 
 ---
 
 ## 🔒 Privacidad y Políticas
 
-**mgRadio** respeta la privacidad de los usuarios:
-- No recopila datos personales identificables ni información de ubicación precisa.
-- La reproducción de audio se realiza directamente desde las fuentes públicas de transmisión de cada radiodifusora.
-- Puedes consultar la política de privacidad completa en [docs/privacy-policy.md](docs/privacy-policy.md) o en formato web en [docs/privacy-policy.html](docs/privacy-policy.html).
+**mgRadio** está diseñada con **cero telemetría**:
+- No recopila analíticas, crash logs remotos ni identificadores de dispositivo.
+- Consulta la política de privacidad en formato web en [docs/privacy-policy.html](docs/privacy-policy.html).
 
 ---
 
 ## 📄 Licencia
 
-Este proyecto está licenciado bajo la **GNU General Public License v3.0 (GPLv3)**.
-
-Esto significa que:
-- Eres libre de usar, estudiar, modificar y distribuir este software.
-- Cualquier trabajo derivado o aplicación modificada que se distribuya debe ser publicado bajo los mismos términos de código abierto (GPLv3).
-- No se proporciona ninguna garantía sobre el software.
-
-Para consultar los términos y condiciones completos, revisa el archivo [LICENSE](LICENSE).
+Licenciado bajo **GNU General Public License v3.0 (GPLv3)**. Consulta [LICENSE](LICENSE) para más detalles.
 
 ---
 
 ### 📬 Contacto y Soporte
 
-Para consultas, reportes o adición de nuevas emisoras al catálogo:
-
-- ✉️ **Contacto de soporte:** migcontacto@gmail.com
+- ✉️ **Correo:** migcontacto@gmail.com
 - 🌐 **Sitio Web:** [https://lmsalazae.github.io/mgradio-android](https://lmsalazae.github.io/mgradio-android)
-
----
-
-<p align="center">
-  Hecho con ❤️ para los amantes de la radio en vivo.
-</p>
