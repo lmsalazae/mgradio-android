@@ -16,7 +16,7 @@ android {
     defaultConfig {
         applicationId = "com.mgradio.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 8
         versionName = "2.0.0"
 

@@ -11,15 +11,13 @@
 -dontwarn androidx.room.**
 -dontwarn coil.**
 
-# --- Firebase Firestore (Serialización de DTOs por reflexión) ---
+# --- Firebase Firestore (Serialización de DTOs) ---
 -keepclassmembers class * {
     @com.google.firebase.firestore.PropertyName <fields>;
     @com.google.firebase.firestore.PropertyName <methods>;
 }
--keep class com.mgradio.app.data.remote.model.** { *; }
+-keep class com.mgradio.app.data.remote.** { *; }
 
 # --- Room Database ---
 -keep class * extends androidx.room.RoomDatabase
--keep class com.mgradio.app.data.local.entity.** { *; }
--keep interface com.mgradio.app.data.local.dao.** { *; }
--keep class com.mgradio.app.data.local.dao.**_Impl { *; }
+-keep class com.mgradio.app.data.local.** { *; }

@@ -133,3 +133,18 @@ Registro cronológico de especificaciones, decisiones técnicas, cambios aplicad
 
 ### Verificación
 - `./gradlew testDebugUnitTest installDebug` y ejecución en dispositivo físico `2511FPC34G`.
+
+---
+
+## [2026-11-17] Paridad de Publicación Google Play (`targetSdk = 36`, Keystore en `_secrets` y ProGuard R8)
+
+### Documentación Actualizada (Spec-First)
+- `docs/specs/04-architecture-and-persistence.md`: actualizado `targetSdk` a `36` para mantener paridad con la publicación `v1.0.6` en Google Play.
+
+### Cambios Implementados
+- `app/build.gradle.kts`: `targetSdk` ajustado a `36` (`versionCode = 8`, `versionName = "2.0.0"`).
+- `app/proguard-rules.pro`: actualizadas reglas R8 para `com.mgradio.app.data.local.**` y `com.mgradio.app.data.remote.**`.
+- Keystore resguardado en `/home/mick/Projects/_secrets/mgradio-keystore.jks` y configurado en `local.properties` (excluido de Git).
+
+### Verificación
+- `./gradlew testDebugUnitTest bundleRelease` y verificación de firma del `.aab`.

@@ -9,7 +9,7 @@
 
 - **Módulo único:** `:app`
 - **`applicationId` / `namespace`:** `com.mgradio.app`
-- **`compileSdk`:** `36`, **`minSdk`:** `26`, **`targetSdk`:** `35`
+- **`compileSdk`:** `36`, **`minSdk`:** `26`, **`targetSdk`:** `36` (paridad con Google Play `v1.0.6`)
 - **Plugins:** Android Application (`9.x`), Kotlin Compose (`2.x`), KSP, Hilt, Google Services (`google-services.json`)
 - **Dependencias principales:**
   - Jetpack Compose Material 3 + `material-icons-extended`
