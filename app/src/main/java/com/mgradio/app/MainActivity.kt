@@ -1,5 +1,8 @@
 package com.mgradio.app
 
+import android.app.UiModeManager
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -25,9 +28,12 @@ class MainActivity : ComponentActivity() {
             val viewModel: MainViewModel = hiltViewModel()
             val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-            val keepScreenOn = state.playerState.status == PlaybackStatus.PLAYING ||
-                state.playerState.status == PlaybackStatus.BUFFERING ||
-                state.playerState.status == PlaybackStatus.RECONNECTING
+            val isTv = isTelevisionDevice()
+            val keepScreenOn = isTv && (
+                state.playerState.status == PlaybackStatus.PLAYING ||
+                    state.playerState.status == PlaybackStatus.BUFFERING ||
+                    state.playerState.status == PlaybackStatus.RECONNECTING
+                )
 
             LaunchedEffect(keepScreenOn) {
                 if (keepScreenOn) {
@@ -50,5 +56,12 @@ class MainActivity : ComponentActivity() {
                 MainScreen(viewModel = viewModel)
             }
         }
+    }
+
+    private fun isTelevisionDevice(): Boolean {
+        val uiModeManager = getSystemService(UiModeManager::class.java)
+        val isTvUiMode = uiModeManager?.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
+        val hasLeanback = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+        return isTvUiMode || hasLeanback
     }
 }
