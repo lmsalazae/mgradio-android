@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.play.publisher)
 }
 
 android {
@@ -71,6 +72,15 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+}
+
+play {
+    val serviceAccountFile = file("/home/mick/Projects/_secrets/play-service-account.json")
+    if (serviceAccountFile.exists()) {
+        serviceAccountCredentials.set(serviceAccountFile)
+    }
+    track.set("internal")
+    defaultToAppBundles.set(true)
 }
 
 dependencies {
