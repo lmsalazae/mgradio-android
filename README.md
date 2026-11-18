@@ -180,6 +180,13 @@ Coloca tu `google-services.json` en `app/google-services.json` (usa `app/google-
 # Ejecutar pruebas unitarias JVM
 ./gradlew testDebugUnitTest
 
+# Ejecutar pruebas E2E instrumentadas en dispositivo/TV conectado (Compose UI)
+./gradlew connectedDebugAndroidTest
+
+# Ejecutar pruebas E2E capturando screenshots reales en Pictures/mgRadioShots
+./gradlew connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.captureScreenshots=true
+
 # Compilar e instalar en dispositivo/TV conectado por ADB
 ./gradlew installDebug
 
