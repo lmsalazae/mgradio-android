@@ -8,7 +8,7 @@ Textos optimizados para ASO (App Store Optimization) y especificaciones de dise�
 
 ### Nombre de la aplicación (Máx. 30 caracteres)
 ```text
-mgRadio - Emisoras en Vivo
+mgRadio — Emisoras en Vivo
 ```
 
 ### Descripción corta (Máx. 80 caracteres)
