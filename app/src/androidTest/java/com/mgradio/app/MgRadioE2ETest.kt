@@ -6,9 +6,14 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
@@ -56,12 +61,28 @@ class MgRadioE2ETest {
         composeRule.onNodeWithContentDescription("Ajustes").assertIsDisplayed()
         snapIfEnabled("01-radio-home.png")
 
-        // Abrir hoja de Ajustes y validar controles de tema y privacidad
+        // Refrescar catálogo de emisoras y probar búsqueda si el campo está visible
+        composeRule.onNodeWithContentDescription("Actualizar emisoras").performClick()
+        composeRule.waitForIdle()
+        if (composeRule.onAllNodesWithText("Buscar", substring = true).fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onAllNodesWithText("Buscar", substring = true).onFirst().performTextInput("Radio")
+            composeRule.waitForIdle()
+            if (composeRule.onAllNodesWithContentDescription("Limpiar búsqueda").fetchSemanticsNodes().isNotEmpty()) {
+                composeRule.onNodeWithContentDescription("Limpiar búsqueda").performClick()
+                composeRule.waitForIdle()
+            }
+        }
+
+        // Abrir hoja de Ajustes y validar controles de tema, Material You y privacidad
         composeRule.onNodeWithContentDescription("Ajustes").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Ajustes de mgRadio").assertIsDisplayed()
-        composeRule.onNodeWithText("Material You (Color dinámico)").assertIsDisplayed()
-        composeRule.onNodeWithText("Privacidad: mgRadio no recopila analíticas ni telemetría.").assertIsDisplayed()
+        composeRule.onNodeWithText("Material You (Color dinámico)").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Material You (Color dinámico)").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Material You (Color dinámico)").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Privacidad: mgRadio no recopila analíticas ni telemetría.").assertExists()
         snapIfEnabled("02-radio-settings.png")
     }
 }
