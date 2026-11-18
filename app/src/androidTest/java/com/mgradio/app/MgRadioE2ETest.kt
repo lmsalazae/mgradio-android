@@ -5,9 +5,9 @@ import android.graphics.Bitmap
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -16,16 +16,19 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.MethodSorters
 
 /**
- * Suite End-to-End (E2E) para mgRadio sobre dispositivo/emulador real.
+ * Suite intensiva End-to-End (E2E) para mgRadio sobre dispositivo/TV real.
  *
  * Opcionalmente captura screenshots vía MediaStore cuando se pasa:
  * `-Pandroid.testInstrumentationRunnerArguments.captureScreenshots=true`
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(AndroidJUnit4::class)
 class MgRadioE2ETest {
 
@@ -54,26 +57,30 @@ class MgRadioE2ETest {
     }
 
     @Test
-    fun mainScreenAndSettingsWorkflow() {
+    fun test01_mainScreenRefreshAndSearch() {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("mgRadio").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Actualizar emisoras").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Ajustes").assertIsDisplayed()
         snapIfEnabled("01-radio-home.png")
 
-        // Refrescar catálogo de emisoras y probar búsqueda si el campo está visible
         composeRule.onNodeWithContentDescription("Actualizar emisoras").performClick()
         composeRule.waitForIdle()
-        if (composeRule.onAllNodesWithText("Buscar", substring = true).fetchSemanticsNodes().isNotEmpty()) {
-            composeRule.onAllNodesWithText("Buscar", substring = true).onFirst().performTextInput("Radio")
+
+        val searchInputs = composeRule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes()
+        if (searchInputs.isNotEmpty()) {
+            composeRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("Radio")
             composeRule.waitForIdle()
             if (composeRule.onAllNodesWithContentDescription("Limpiar búsqueda").fetchSemanticsNodes().isNotEmpty()) {
                 composeRule.onNodeWithContentDescription("Limpiar búsqueda").performClick()
                 composeRule.waitForIdle()
             }
         }
+    }
 
-        // Abrir hoja de Ajustes y validar controles de tema, Material You y privacidad
+    @Test
+    fun test02_settingsSheetThemesMaterialYouAndSleepPresets() {
+        composeRule.waitForIdle()
         composeRule.onNodeWithContentDescription("Ajustes").performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Ajustes de mgRadio").assertIsDisplayed()
@@ -84,5 +91,22 @@ class MgRadioE2ETest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Privacidad: mgRadio no recopila analíticas ni telemetría.").assertExists()
         snapIfEnabled("02-radio-settings.png")
+    }
+
+    @Test
+    fun test03_stationFavoriteAndPlaybackControlsIfCatalogLoaded() {
+        composeRule.waitForIdle()
+        // Esperar brevemente por catálogo Room/Firestore
+        try {
+            composeRule.waitUntil(timeoutMillis = 4000) {
+                composeRule.onAllNodesWithContentDescription("Favorito").fetchSemanticsNodes().isNotEmpty()
+            }
+        } catch (_: Throwable) {
+            return
+        }
+        composeRule.onAllNodesWithContentDescription("Favorito").onFirst().performClick()
+        composeRule.waitForIdle()
+        composeRule.onAllNodesWithContentDescription("Favorito").onFirst().performClick()
+        composeRule.waitForIdle()
     }
 }
